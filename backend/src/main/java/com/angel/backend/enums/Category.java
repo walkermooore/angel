@@ -1,4 +1,4 @@
-package com.angel.backend.model;
+package com.angel.backend.enums;
 
 public enum Category {
     PRATA,

@@ -73,8 +73,3 @@ cd backend
 ```
 A API estará acessível em **`http://localhost:8080`**.
 
----
-
-## 🤝 Como Integrar Frontend & Backend
-1.  Habilite o CORS no backend (conforme indicado no [backend/README.md](backend/README.md)) para permitir chamadas da origem `http://localhost:5173`.
-2.  Substitua a API simulada do frontend ([frontend/src/lib/store.ts](frontend/src/lib/store.ts)) por requisições HTTP (`fetch` ou `axios`) apontando para os endpoints do backend na porta `8080`.
