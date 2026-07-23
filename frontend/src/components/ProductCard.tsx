@@ -3,28 +3,40 @@ import { useCart, formatBRL } from "@/lib/cart";
 import type { Product } from "@/lib/products";
 import { useState } from "react";
 import { ProductDetailDialog } from "./ProductDetailDialog";
-import { toast } from "sonner";
 
 export function ProductCard({ product }: { product: Product }) {
   const { add } = useCart();
   const [open, setOpen] = useState(false);
+
+  const effectivePrice = product.discountPrice ?? product.price;
+  const hasDiscount = Boolean(product.discountPercent && product.discountPercent > 0);
+
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
-    add(product);
-    toast.success("Produto adicionado", { description: product.name });
+    add({ ...product, price: effectivePrice });
   };
+
   return (
-    <div className="group flex flex-col">
-      <button
+    <div className="group flex flex-col h-full min-w-0">
+      {/* Image container as div */}
+      <div
         onClick={() => setOpen(true)}
-        className="relative overflow-hidden rounded-lg bg-secondary/40 aspect-[4/5] text-left"
+        className="relative overflow-hidden rounded-lg bg-secondary/40 aspect-square w-full shrink-0 text-left cursor-pointer"
+        style={{ aspectRatio: "1 / 1" }}
       >
         <img
           src={product.image}
           alt={product.name}
-          loading="lazy"
+          loading="eager"
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
+
+        {hasDiscount && (
+          <span className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-foreground text-background shadow">
+            {product.discountPercent}% OFF
+          </span>
+        )}
+
         <div className="absolute inset-x-3 bottom-3 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
           <Button
             onClick={handleAdd}
@@ -33,22 +45,35 @@ export function ProductCard({ product }: { product: Product }) {
             Adicionar
           </Button>
         </div>
-      </button>
-      <button onClick={() => setOpen(true)} className="mt-4 flex items-baseline justify-between gap-3 text-left">
-        <h3 className="text-sm font-medium leading-tight">{product.name}</h3>
-        <span className="text-sm text-muted-foreground shrink-0 tabular-nums">{formatBRL(product.price)}</span>
-      </button>
-      <p className="text-xs text-muted-foreground mt-1 capitalize">
-        {product.category === "prata" ? "Prata 925" : "Cosméticos"}
-      </p>
-      <Button
-        onClick={handleAdd}
-        variant="outline"
-        className="sm:hidden mt-3 rounded-full uppercase tracking-widest text-[11px]"
-      >
-        Adicionar ao carrinho
-      </Button>
-      <ProductDetailDialog product={product} open={open} onOpenChange={setOpen} />
+      </div>
+
+      <div className="mt-4 flex flex-col flex-1 justify-between gap-1">
+        <div>
+          <div
+            onClick={() => setOpen(true)}
+            className="flex items-baseline justify-between gap-2 text-left w-full cursor-pointer"
+          >
+            <h3 className="text-sm font-medium leading-tight line-clamp-2 hover:underline">{product.name}</h3>
+            <div className="flex flex-col items-end shrink-0 tabular-nums">
+              {hasDiscount && (
+                <span className="text-[11px] text-muted-foreground line-through">{formatBRL(product.price)}</span>
+              )}
+              <span className="text-sm text-foreground font-semibold">{formatBRL(effectivePrice)}</span>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1 capitalize">
+            {product.category === "prata" ? "Prata 925" : product.category}
+          </p>
+        </div>
+        <Button
+          onClick={handleAdd}
+          variant="outline"
+          className="sm:hidden mt-3 rounded-full uppercase tracking-widest text-[11px] w-full"
+        >
+          Adicionar ao carrinho
+        </Button>
+      </div>
+      <ProductDetailDialog product={{ ...product, price: effectivePrice }} open={open} onOpenChange={setOpen} />
     </div>
   );
 }
