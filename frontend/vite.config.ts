@@ -1,14 +1,15 @@
 import { defineConfig } from "vite";
+import reactRefresh from "@vitejs/plugin-react";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import tsconfigPaths from "vite-tsconfig-paths";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
+  resolve: { tsconfigPaths: true },
   plugins: [
-    tsconfigPaths(),
-    tailwindcss(),
     tanstackStart({
       server: { entry: "server" },
     }),
+    reactRefresh(),
+    tailwindcss(),
   ],
 });
