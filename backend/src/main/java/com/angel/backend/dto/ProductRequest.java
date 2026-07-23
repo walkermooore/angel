@@ -1,7 +1,5 @@
 package com.angel.backend.dto;
 
-import com.angel.backend.enums.Category;
-
 import java.math.BigDecimal;
 
 import jakarta.validation.constraints.NotBlank;
@@ -27,9 +25,15 @@ public class ProductRequest {
     @Positive
     private BigDecimal price;
 
-    @NotNull
-    private Category category;
+    private Integer discountPercent;
+
+    private BigDecimal discountPrice;
+
+    @NotBlank
+    private String category;
 
     @NotBlank
     private String imageUrl;
+
+    private Boolean highlighted;
 }

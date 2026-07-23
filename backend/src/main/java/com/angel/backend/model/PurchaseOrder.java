@@ -26,7 +26,13 @@ public class PurchaseOrder {
 
     private String number;
 
+    private String phone;
+
     private String email;
+
+    private String trackingCode;
+
+    private String shippingOption;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

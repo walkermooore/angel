@@ -1,6 +1,5 @@
 package com.angel.backend.model;
 
-import com.angel.backend.enums.Category;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,6 +15,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
 public class Product {
 
@@ -26,17 +26,23 @@ public class Product {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
     @Column(nullable = false)
     private BigDecimal price;
 
-    @Enumerated(EnumType.STRING)
-    private Category category;
+    private Integer discountPercent;
 
-    @Column(name = "image_url")
+    private BigDecimal discountPrice;
+
+    @Column(nullable = false)
+    private String category;
+
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
+
+    private Boolean highlighted = false;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
@@ -45,4 +51,14 @@ public class Product {
     private LocalDateTime updatedAt;
 
     private LocalDateTime deletedAt;
+
+    public Product(String name, String description, BigDecimal price, Integer discountPercent, BigDecimal discountPrice, String category, String imageUrl) {
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.discountPercent = discountPercent;
+        this.discountPrice = discountPrice;
+        this.category = category;
+        this.imageUrl = imageUrl;
+    }
 }
