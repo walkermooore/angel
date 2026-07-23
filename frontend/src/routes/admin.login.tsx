@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { adminAuth } from "@/lib/admin-auth";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,6 @@ export const Route = createFileRoute("/admin/login")({
 });
 
 function AdminLogin() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -25,7 +24,11 @@ function AdminLogin() {
     e.preventDefault();
     if (adminAuth.login(email, password)) {
       toast.success("Bem-vinda de volta!");
-      navigate({ to: "/admin" });
+      // Usar navegação hard para que o router releia o localStorage do zero
+      // e não haja race condition no beforeLoad
+      setTimeout(() => {
+        window.location.replace("/admin");
+      }, 300);
     } else {
       toast.error("Credenciais inválidas. Use a conta de demonstração.");
     }
