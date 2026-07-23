@@ -1,75 +1,90 @@
-# Angel Beauty Gems — Joias & Cosméticos
+# 🌟 Angel — Joias de Prata & Cosméticos
 
-Este é o repositório principal do projeto **Angel**, um e-commerce minimalista de joias em prata 925 e cosméticos selecionados. O projeto é composto por uma aplicação web no frontend integrada com uma API robusta no backend.
+Bem-vindo ao repositório do **Angel**, um e-commerce minimalista e sofisticado desenvolvido para a venda de joias em prata 925 e cosméticos selecionados. 
+
+Este projeto foi projetado com uma arquitetura moderna, dividida de forma limpa entre uma aplicação web (Single Page Application com SSR via TanStack Start) no frontend e uma API REST robusta em Spring Boot no backend.
 
 ---
 
 ## 📁 Estrutura do Repositório
 
-O projeto é dividido em dois módulos principais:
+O projeto está organizado de forma modular para facilitar o desenvolvimento independente de cada stack:
 
-*   **[frontend/](frontend/)**: Interface de e-commerce e painel administrativo desenvolvida em **React**, **Vite** e **TypeScript**.
-*   **[backend/](backend/)**: API REST desenvolvida em **Java 21** e **Spring Boot** com banco de dados **PostgreSQL** para persistência de dados.
+*   📂 **[frontend/](./frontend)**: Interface do usuário (E-commerce) e Painel Administrativo de controle de vendas. Desenvolvido com **React**, **Vite**, **TypeScript** e **TanStack Start**.
+*   📂 **[backend/](./backend)**: API RESTful responsável pelas regras de negócio, persistência de dados e endpoints de produtos/pedidos. Desenvolvido em **Java 21** com **Spring Boot 3.x** e banco de dados **PostgreSQL**.
 
 ---
 
 ## 🖥️ Módulo Frontend
 
-O frontend oferece uma experiência de compra moderna e fluida, além de um painel de controle administrativo completo para gerenciamento de vendas.
+A interface do usuário do **Angel** prioriza a performance, usabilidade e design sofisticado. Inclui a jornada de compra completa (vitrine de produtos, carrinho dinâmico, checkout) e um dashboard administrativo para gestão de vendas e estoque.
 
-### Principais Tecnologias:
-*   React & TypeScript
-*   Vite (Ferramenta de build rápida)
-*   TanStack Router (Roteamento baseado em arquivos)
-*   Tailwind CSS & shadcn/ui (Estilização e componentes de UI)
-*   TanStack Query (Gerenciamento de requisições e cache de APIs)
+### 🛠️ Tecnologias Principais
+*   **React 19 & TypeScript**: Componentização moderna e tipagem estática segura.
+*   **TanStack Start & Router**: Roteamento baseado em arquivos com Server-Side Rendering (SSR) híbrido de alta performance.
+*   **Tailwind CSS (v4) & shadcn/ui**: Estilização baseada em utilitários e componentes acessíveis e elegantes.
+*   **TanStack Query**: Gerenciamento inteligente de estado assíncrono, cache e requisições HTTP.
+*   **Lucide React**: Biblioteca de ícones vetoriais modernos.
 
-### Como Executar o Frontend:
-1.  Acesse o diretório do frontend:
-    ```bash
-    cd frontend
-    ```
-2.  Instale as dependências (o projeto utiliza o gerenciador de pacotes **Bun**):
-    ```bash
-    bun install
-    ```
-3.  Inicie o servidor de desenvolvimento:
-    ```bash
-    bun dev
-    ```
-    A aplicação estará disponível em **`http://localhost:5173`**.
+### 🚀 Como Inicializar o Frontend
+1. Acesse o diretório correspondente:
+   ```bash
+   cd frontend
+   ```
+2. Instale as dependências utilizando o gerenciador de pacotes **npm**:
+   ```bash
+   npm install
+   ```
+3. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
+   A aplicação estará disponível em [http://localhost:5173](http://localhost:5173).
 
 ---
 
 ## ⚙️ Módulo Backend
 
-O backend fornece a lógica de negócios, endpoints de consulta de produtos, persistência e atualização dos status de pedidos.
+O backend fornece todos os serviços e persistência de dados necessários para suportar o e-commerce.
 
-### Principais Tecnologias:
-*   Java 21 (LTS)
-*   Spring Boot 3.x
-*   Spring Data JPA (Camada de persistência ORM)
-*   PostgreSQL (Banco de dados relacional principal)
-*   Docker Compose (Orquestração do banco de dados local)
-*   Lombok (Anotações utilitárias)
+### 🛠️ Tecnologias Principais
+*   **Java 21 (LTS)**: Utilização dos recursos mais modernos da linguagem.
+*   **Spring Boot 3.x**: Framework ágil para criação de APIs empresariais.
+*   **Spring Data JPA**: Abstração de persistência ORM sobre o Hibernate.
+*   **PostgreSQL**: Banco de dados relacional robusto e escalável.
+*   **MapStruct**: Mapeamento seguro de DTOs e entidades com alta performance.
+*   **Docker & Docker Compose**: Containerização simplificada do banco de dados local.
 
-### Como Executar o Backend:
+### 🚀 Como Inicializar o Backend
+
+> [!NOTE]
+> Certifique-se de ter o Docker instalado e rodando em sua máquina antes de iniciar os serviços do banco de dados.
 
 #### 1. Iniciar o Banco de Dados (PostgreSQL)
-Você pode subir a instância do PostgreSQL localmente de forma rápida utilizando o Docker Compose configurado em [backend/docker-compose.yml](backend/docker-compose.yml):
+Acesse a pasta do backend e suba o container do banco de dados:
 ```bash
 cd backend
 docker compose up -d
 ```
-*   **Banco de Dados:** `angeldb`
-*   **Porta:** `5432`
-*   **Usuário/Senha:** `postgres` / `postgres`
+O banco de dados estará disponível localmente na porta `5432` com as seguintes credenciais padrão:
+*   **Database:** `angeldb`
+*   **User/Password:** `postgres` / `postgres`
 
-#### 2. Iniciar a Aplicação Spring Boot
-Com o banco de dados ativo, inicialize o servidor utilizando o JDK 21 portátil configurado no projeto através do script de atalho [backend/run.sh](backend/run.sh):
+#### 2. Executar a API Spring Boot
+Com o banco ativo, execute o script utilitário para compilar e subir o servidor utilizando a JDK portátil configurada no projeto:
 ```bash
 cd backend
 ./run.sh
 ```
-A API estará acessível em **`http://localhost:8080`**.
+A API estará acessível em [http://localhost:8080](http://localhost:8080).
 
+---
+
+## 🔒 Painel Administrativo
+O e-commerce conta com uma seção administrativa integrada no frontend para o controle de pedidos e estoque:
+*   Acesse a rota `/admin` para visualizar o dashboard.
+*   Gerenciamento de produtos (listar, criar, editar e excluir).
+*   Visualização de pedidos (detalhes de entrega, itens e atualização de status de pagamento/envio).
+
+---
+Desenvolvido com carinho para o projeto **Angel**.

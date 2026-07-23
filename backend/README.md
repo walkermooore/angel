@@ -29,7 +29,7 @@ A API depende do banco relacional PostgreSQL para persistência. Suba o containe
 docker compose up -d
 ```
 Isso iniciará o banco com as seguintes configurações (definidas em `docker-compose.yml` e `src/main/resources/application.properties`):
-*   **Database URL:** `jdbc:postgresql://angel:5433/angeldb`
+*   **Database URL:** `jdbc:postgresql://localhost:5432/angeldb`
 *   **Username:** `postgres`
 *   **Password:** `postgres`
 
