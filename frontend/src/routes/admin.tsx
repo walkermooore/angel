@@ -1,23 +1,25 @@
-import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useAdminAuth } from "@/lib/admin-auth";
 
 export const Route = createFileRoute("/admin")({
-  beforeLoad: ({ location }) => {
-    if (location.pathname === "/admin/login") return;
-    const isAuthed = typeof window !== "undefined" && localStorage.getItem("angel:admin") === "1";
-    if (!isAuthed) {
-      throw redirect({ to: "/admin/login" });
-    }
-  },
   component: AdminLayout,
 });
 
 function AdminLayout() {
   const { isAuthed } = useAdminAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isLoginPage = location.pathname === "/admin/login";
+
+  // Redireciona para login se não estiver autenticado (fora da página de login)
+  useEffect(() => {
+    if (!isLoginPage && !isAuthed) {
+      navigate({ to: "/admin/login", replace: true });
+    }
+  }, [isAuthed, isLoginPage, navigate]);
 
   if (isLoginPage) {
     return <Outlet />;
