@@ -1,20 +1,31 @@
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useAdminAuth } from "@/lib/admin-auth";
 
 export const Route = createFileRoute("/admin")({
+  beforeLoad: ({ location }) => {
+    if (location.pathname === "/admin/login") return;
+    const isAuthed = typeof window !== "undefined" && localStorage.getItem("angel:admin") === "1";
+    if (!isAuthed) {
+      throw redirect({ to: "/admin/login" });
+    }
+  },
   component: AdminLayout,
 });
 
 function AdminLayout() {
   const { isAuthed } = useAdminAuth();
-  const navigate = useNavigate();
-  useEffect(() => {
-    if (!isAuthed) navigate({ to: "/admin/login" });
-  }, [isAuthed, navigate]);
+  const location = useLocation();
 
-  if (!isAuthed) return null;
+  const isLoginPage = location.pathname === "/admin/login";
+
+  if (isLoginPage) {
+    return <Outlet />;
+  }
+
+  if (!isAuthed) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
