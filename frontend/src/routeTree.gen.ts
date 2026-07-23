@@ -19,6 +19,8 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminProdutosRouteImport } from './routes/admin.produtos'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
+import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 
 const SobreRoute = SobreRouteImport.update({
   id: '/sobre',
@@ -70,6 +72,16 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
+  id: '/categorias',
+  path: '/categorias',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -78,6 +90,8 @@ export interface FileRoutesByFullPath {
   '/pedido-concluido': typeof PedidoConcluidoRoute
   '/produtos': typeof ProdutosRoute
   '/sobre': typeof SobreRoute
+  '/admin/categorias': typeof AdminCategoriasRoute
+  '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
@@ -89,6 +103,8 @@ export interface FileRoutesByTo {
   '/pedido-concluido': typeof PedidoConcluidoRoute
   '/produtos': typeof ProdutosRoute
   '/sobre': typeof SobreRoute
+  '/admin/categorias': typeof AdminCategoriasRoute
+  '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
@@ -102,6 +118,8 @@ export interface FileRoutesById {
   '/pedido-concluido': typeof PedidoConcluidoRoute
   '/produtos': typeof ProdutosRoute
   '/sobre': typeof SobreRoute
+  '/admin/categorias': typeof AdminCategoriasRoute
+  '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
@@ -116,6 +134,8 @@ export interface FileRouteTypes {
     | '/pedido-concluido'
     | '/produtos'
     | '/sobre'
+    | '/admin/categorias'
+    | '/admin/configuracoes'
     | '/admin/login'
     | '/admin/pedidos'
     | '/admin/produtos'
@@ -127,6 +147,8 @@ export interface FileRouteTypes {
     | '/pedido-concluido'
     | '/produtos'
     | '/sobre'
+    | '/admin/categorias'
+    | '/admin/configuracoes'
     | '/admin/login'
     | '/admin/pedidos'
     | '/admin/produtos'
@@ -139,6 +161,8 @@ export interface FileRouteTypes {
     | '/pedido-concluido'
     | '/produtos'
     | '/sobre'
+    | '/admin/categorias'
+    | '/admin/configuracoes'
     | '/admin/login'
     | '/admin/pedidos'
     | '/admin/produtos'
@@ -226,10 +250,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/configuracoes': {
+      id: '/admin/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/admin/configuracoes'
+      preLoaderRoute: typeof AdminConfiguracoesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/categorias': {
+      id: '/admin/categorias'
+      path: '/categorias'
+      fullPath: '/admin/categorias'
+      preLoaderRoute: typeof AdminCategoriasRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminCategoriasRoute: typeof AdminCategoriasRoute
+  AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminPedidosRoute: typeof AdminPedidosRoute
   AdminProdutosRoute: typeof AdminProdutosRoute
@@ -237,6 +277,8 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminCategoriasRoute: AdminCategoriasRoute,
+  AdminConfiguracoesRoute: AdminConfiguracoesRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminPedidosRoute: AdminPedidosRoute,
   AdminProdutosRoute: AdminProdutosRoute,
