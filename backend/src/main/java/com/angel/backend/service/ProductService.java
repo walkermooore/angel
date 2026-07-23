@@ -38,4 +38,8 @@ public class ProductService {
 
         return productRepository.save(produto);
     }
+
+    public void deletarProduto(UUID id) {
+        productRepository.deleteById(id);
+    }
 }

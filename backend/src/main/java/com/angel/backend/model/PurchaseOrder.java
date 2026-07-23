@@ -53,6 +53,8 @@ public class PurchaseOrder {
     private Payment payment;
 
     @Embedded
+    @AttributeOverrides({
+        @AttributeOverride(name = "number", column = @Column(name = "address_number"))
+    })
     private Address address;
-
 }

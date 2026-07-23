@@ -4,6 +4,7 @@ import com.angel.backend.dto.ProductRequest;
 import com.angel.backend.model.Product;
 import com.angel.backend.service.ProductService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,8 +31,13 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    public Product atualizarProduto(@PathVariable UUID id, @RequestBody ProductRequest request){
+    public Product atualizarProduto(@PathVariable UUID id, @Valid @RequestBody ProductRequest request){
         return productService.atualizarProduto(id, request);
     }
 
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deletarProduto(@PathVariable UUID id) {
+        productService.deletarProduto(id);
+    }
 }
