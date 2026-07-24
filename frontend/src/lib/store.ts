@@ -12,7 +12,7 @@ import {
   updateOrderTrackingInBackend,
 } from "./api";
 
-export type OrderStatus = "Pendente" | "Pago" | "Enviado" | "Concluído";
+export type OrderStatus = "Pendente" | "Pago" | "Enviado" | "Pronto para Retirada" | "Concluído";
 export type ShippingOption = "entrega" | "retirada";
 
 export interface OrderItem {
@@ -50,7 +50,7 @@ export interface Order {
 const PRODUCTS_KEY = "angel:products";
 const ORDERS_KEY = "angel:orders";
 
-const seedOrders: Order[] = [
+const developmentSeedOrders: Order[] = [
   {
     id: "ord-1",
     number: "ANG-20260723-9482",
@@ -77,6 +77,7 @@ const seedOrders: Order[] = [
     },
   },
 ];
+const seedOrders: Order[] = import.meta.env.PROD ? [] : developmentSeedOrders;
 
 function loadProducts(): Product[] {
   if (typeof window === "undefined") return seedProducts;
@@ -93,7 +94,7 @@ function loadOrders(): Order[] {
     const raw = localStorage.getItem(ORDERS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) return parsed;
     }
   } catch {}
   return seedOrders;
@@ -123,6 +124,55 @@ function createStore<T>(key: string, initial: () => T) {
 export const productStore = createStore<Product[]>(PRODUCTS_KEY, loadProducts);
 export const orderStore = createStore<Order[]>(ORDERS_KEY, loadOrders);
 
+export function normalizeOrderStatus(status: unknown): OrderStatus {
+  const value =
+    typeof status === "object" && status !== null && "description" in status
+      ? String((status as { description: unknown }).description)
+      : String(status || "");
+  const normalized = value.trim().toLowerCase().replaceAll("_", " ");
+
+  if (normalized.includes("pronto") || normalized.includes("retirada")) return "Pronto para Retirada";
+  if (normalized.includes("pago")) return "Pago";
+  if (normalized.includes("envi")) return "Enviado";
+  if (normalized.includes("concl")) return "Concluído";
+  return "Pendente";
+}
+
+export function mapOrderFromBackend(o: any): Order {
+  const allProds = productStore.get();
+  return {
+    id: String(o.id),
+    number: o.number || "ANG-1001",
+    email: o.email || "",
+    createdAt: o.createdAt || new Date().toISOString(),
+    items: (o.items || []).map((i: any) => {
+      const matchedProd = allProds.find((p) => String(p.id) === String(i.productId));
+      return {
+        productId: String(i.productId || ""),
+        name: i.name || matchedProd?.name || "",
+        price: Number(i.price || matchedProd?.price || 0),
+        quantity: Number(i.quantity || 1),
+        image: i.image || matchedProd?.image || seedProducts[0]?.image || "",
+      };
+    }),
+    subtotal: Number(o.subtotal || o.total || 0),
+    shipping: Number(o.shipping || 0),
+    total: Number(o.total || 0),
+    status: normalizeOrderStatus(o.status),
+    shippingOption: (o.shippingOption as ShippingOption) || "entrega",
+    trackingCode: o.trackingCode || "",
+    payment: o.payment === "PIX" ? "PIX" : o.payment === "BOLETO" ? "Boleto" : "Cartão",
+    address: o.address || {
+      cep: "",
+      street: "",
+      number: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+    },
+  };
+}
+
 export function refreshProductsFromBackend() {
   getProductsFromBackend().then((remoteProds) => {
     if (remoteProds && Array.isArray(remoteProds) && remoteProds.length > 0) {
@@ -149,38 +199,7 @@ export function refreshProductsFromBackend() {
 export function refreshOrdersFromBackend() {
   getOrdersFromBackend().then((remoteOrders) => {
     if (remoteOrders && Array.isArray(remoteOrders) && remoteOrders.length > 0) {
-      const allProds = productStore.get();
-      const mapped: Order[] = remoteOrders.map((o: any) => ({
-        id: String(o.id),
-        number: o.number || "ANG-1001",
-        email: o.email || "",
-        createdAt: o.createdAt || new Date().toISOString(),
-        items: (o.items || []).map((i: any) => {
-          const matchedProd = allProds.find((p) => String(p.id) === String(i.productId));
-          return {
-            productId: String(i.productId || ""),
-            name: i.name || matchedProd?.name || "",
-            price: Number(i.price || matchedProd?.price || 0),
-            quantity: Number(i.quantity || 1),
-            image: i.image || matchedProd?.image || seedProducts[0]?.image || "",
-          };
-        }),
-        subtotal: Number(o.subtotal || o.total || 0),
-        shipping: Number(o.shipping || 0),
-        total: Number(o.total || 0),
-        status: (o.status?.description || o.status || "Pendente") as OrderStatus,
-        shippingOption: (o.shippingOption as ShippingOption) || "entrega",
-        trackingCode: o.trackingCode || "",
-        payment: o.payment === "PIX" ? "PIX" : o.payment === "BOLETO" ? "Boleto" : "Cartão",
-        address: o.address || {
-          cep: "",
-          street: "",
-          number: "",
-          neighborhood: "",
-          city: "",
-          state: "",
-        },
-      }));
+      const mapped: Order[] = remoteOrders.map(mapOrderFromBackend);
       orderStore.set(mapped);
     }
   });
@@ -271,12 +290,17 @@ export const ordersApi = {
 
     return order;
   },
-  updateStatus: (id: string, status: OrderStatus) => {
+  updateStatus: async (id: string, status: OrderStatus) => {
     const current = orderStore.get().find((o) => o.id === id);
     orderStore.set(orderStore.get().map((o) => (o.id === id ? { ...o, status } : o)));
-    updateOrderStatusInBackend(id, status).then(() => {
-      refreshOrdersFromBackend();
-    });
+    try {
+      const saved = await updateOrderStatusInBackend(id, status);
+      const mapped = mapOrderFromBackend(saved);
+      orderStore.set(orderStore.get().map((o) => (o.id === id ? mapped : o)));
+    } catch (error) {
+      if (current) orderStore.set(orderStore.get().map((o) => (o.id === id ? current : o)));
+      throw error;
+    }
 
     if (current) {
       auditApi.log(
@@ -287,15 +311,25 @@ export const ordersApi = {
       );
     }
   },
-  updateOrder: (id: string, patch: Partial<Order>) => {
+  updateOrder: async (id: string, patch: Partial<Order>) => {
     const current = orderStore.get().find((o) => o.id === id);
     orderStore.set(orderStore.get().map((o) => (o.id === id ? { ...o, ...patch } : o)));
 
-    if (patch.status) {
-      updateOrderStatusInBackend(id, patch.status);
-    }
-    if (patch.trackingCode !== undefined) {
-      updateOrderTrackingInBackend(id, patch.trackingCode);
+    try {
+      let saved: any = null;
+      if (patch.status) {
+        saved = await updateOrderStatusInBackend(id, patch.status);
+      }
+      if (patch.trackingCode !== undefined) {
+        saved = await updateOrderTrackingInBackend(id, patch.trackingCode);
+      }
+      if (saved) {
+        const mapped = mapOrderFromBackend(saved);
+        orderStore.set(orderStore.get().map((o) => (o.id === id ? mapped : o)));
+      }
+    } catch (error) {
+      if (current) orderStore.set(orderStore.get().map((o) => (o.id === id ? current : o)));
+      throw error;
     }
 
     if (current) {

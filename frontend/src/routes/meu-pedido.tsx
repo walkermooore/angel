@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, CheckCircle2, Circle, Package, MapPin, Phone, MessageCircle, AlertCircle, Truck, ExternalLink, Store } from "lucide-react";
 import { toast } from "sonner";
+import { getOrderFromBackend } from "@/lib/api";
+import { mapOrderFromBackend } from "@/lib/store";
 
 export const Route = createFileRoute("/meu-pedido")({
   head: () => ({
@@ -31,25 +33,30 @@ function MeuPedidoPage() {
   useEffect(() => {
     if (n) {
       setSearchCode(n);
-      const match = orders.find((o) => o.number.trim().toLowerCase() === n.trim().toLowerCase());
-      setFoundOrder(match || null);
-      setSearched(true);
+      const localMatch = orders.find((o) => o.number.trim().toLowerCase() === n.trim().toLowerCase());
+      setFoundOrder(localMatch || null);
+      getOrderFromBackend(n).then((remote) => {
+        setFoundOrder(remote ? mapOrderFromBackend(remote) : localMatch || null);
+        setSearched(true);
+      });
     }
   }, [n, orders]);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     const clean = searchCode.trim();
     if (!clean) return;
 
     navigate({ to: "/meu-pedido", search: { n: clean } });
     const match = orders.find((o) => o.number.trim().toLowerCase() === clean.toLowerCase());
-    setFoundOrder(match || null);
+    const remote = await getOrderFromBackend(clean);
+    setFoundOrder(remote ? mapOrderFromBackend(remote) : match || null);
     setSearched(true);
   };
 
   const getStepIndex = (status: string) => {
     if (status === "Concluído") return 3;
+    if (status === "Pronto para Retirada") return 2;
     if (status === "Enviado") return 2;
     if (status === "Pago") return 1;
     return 0; // Pendente

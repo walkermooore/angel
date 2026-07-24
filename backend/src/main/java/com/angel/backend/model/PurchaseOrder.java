@@ -24,6 +24,7 @@ public class PurchaseOrder {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(unique = true)
     private String number;
 
     private String phone;

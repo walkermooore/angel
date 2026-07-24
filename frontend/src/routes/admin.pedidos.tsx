@@ -16,7 +16,8 @@ export const Route = createFileRoute("/admin/pedidos")({
   component: AdminOrders,
 });
 
-const STATUSES: OrderStatus[] = ["Pendente", "Pago", "Enviado", "Concluído"];
+const DELIVERY_STATUSES: OrderStatus[] = ["Pendente", "Pago", "Enviado", "Concluído"];
+const PICKUP_STATUSES: OrderStatus[] = ["Pendente", "Pago", "Pronto para Retirada", "Concluído"];
 
 export function AdminOrders() {
   const orders = useOrders();
@@ -30,22 +31,18 @@ export function AdminOrders() {
     setEditTracking(o.trackingCode || "");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selected) return;
-    ordersApi.updateOrder(selected.id, {
-      status: editStatus,
-      trackingCode: editStatus === "Enviado" ? editTracking.trim().toUpperCase() : selected.trackingCode,
-    });
-    toast.success("Pedido atualizado com sucesso!");
-    setSelected((prev) =>
-      prev
-        ? {
-            ...prev,
-            status: editStatus,
-            trackingCode: editStatus === "Enviado" ? editTracking.trim().toUpperCase() : prev.trackingCode,
-          }
-        : null
-    );
+    try {
+      await ordersApi.updateOrder(selected.id, {
+        status: editStatus,
+        trackingCode: editStatus === "Enviado" ? editTracking.trim().toUpperCase() : selected.trackingCode,
+      });
+      toast.success("Pedido atualizado com sucesso!");
+      setSelected(null);
+    } catch {
+      toast.error("Não foi possível atualizar o pedido. Verifique a conexão com o backend.");
+    }
   };
 
   return (
@@ -120,7 +117,7 @@ export function AdminOrders() {
                           : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
                       }
                     >
-                      {o.status === "Enviado" && o.shippingOption === "retirada" ? "Pronto para Retirada" : o.status}
+                      {o.status}
                     </Badge>
                   </TableCell>
                 </TableRow>
@@ -216,9 +213,9 @@ export function AdminOrders() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {STATUSES.map((s) => (
+                          {(selected.shippingOption === "retirada" ? PICKUP_STATUSES : DELIVERY_STATUSES).map((s) => (
                             <SelectItem key={s} value={s}>
-                              {s === "Enviado" && selected?.shippingOption === "retirada" ? "Pronto para Retirada" : s}
+                              {s}
                             </SelectItem>
                           ))}
                         </SelectContent>

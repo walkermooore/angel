@@ -120,19 +120,6 @@ public class PurchaseOrderController {
 
     private Status parseStatus(String str) {
         if (str == null) return Status.PENDENTE;
-        switch (str.toLowerCase()) {
-            case "pago": return Status.PAGO;
-            case "enviado":
-            case "pronto para retirada": return Status.ENVIADO;
-            case "concluído":
-            case "concluido": return Status.CONCLUIDO;
-            case "cancelado": return Status.CANCELADO;
-            default:
-                try {
-                    return Status.valueOf(str.toUpperCase());
-                } catch (Exception e) {
-                    return Status.PENDENTE;
-                }
-        }
+        return Status.fromValue(str);
     }
 }
