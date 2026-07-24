@@ -120,7 +120,7 @@ export function AdminOrders() {
                           : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
                       }
                     >
-                      {o.status}
+                      {o.status === "Enviado" && o.shippingOption === "retirada" ? "Pronto para Retirada" : o.status}
                     </Badge>
                   </TableCell>
                 </TableRow>
@@ -218,7 +218,7 @@ export function AdminOrders() {
                         <SelectContent>
                           {STATUSES.map((s) => (
                             <SelectItem key={s} value={s}>
-                              {s}
+                              {s === "Enviado" && selected?.shippingOption === "retirada" ? "Pronto para Retirada" : s}
                             </SelectItem>
                           ))}
                         </SelectContent>

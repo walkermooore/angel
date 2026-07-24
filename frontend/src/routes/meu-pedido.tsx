@@ -19,13 +19,6 @@ export const Route = createFileRoute("/meu-pedido")({
   component: MeuPedidoPage,
 });
 
-const statusSteps: { key: string; label: string; desc: string }[] = [
-  { key: "Pendente", label: "Pedido Recebido", desc: "Aguardando confirmação do pagamento" },
-  { key: "Pago", label: "Pagamento Confirmado", desc: "Pagamento aprovado e em preparação" },
-  { key: "Enviado", label: "Em Trânsito / Enviado", desc: "Objeto postado e a caminho do endereço" },
-  { key: "Concluído", label: "Pedido Entregue", desc: "Entregue no endereço cadastrado" },
-];
-
 function MeuPedidoPage() {
   const { n } = Route.useSearch();
   const orders = useOrders();
@@ -62,6 +55,25 @@ function MeuPedidoPage() {
     return 0; // Pendente
   };
 
+  const isRetirada = foundOrder?.shippingOption === "retirada";
+
+  const statusSteps = [
+    { key: "Pendente", label: "Pedido Recebido", desc: "Aguardando confirmação do pagamento" },
+    { key: "Pago", label: "Pagamento Confirmado", desc: "Pagamento aprovado e em preparação" },
+    {
+      key: "Enviado",
+      label: isRetirada ? "Pronto para Retirada" : "Em Trânsito / Enviado",
+      desc: isRetirada
+        ? "Seu pedido está pronto e disponível para ser retirado na loja física"
+        : "Objeto postado e a caminho do endereço",
+    },
+    {
+      key: "Concluído",
+      label: isRetirada ? "Retirado na Loja" : "Pedido Entregue",
+      desc: isRetirada ? "Pedido retirado com sucesso na loja física" : "Entregue no endereço cadastrado",
+    },
+  ];
+
   const currentStep = foundOrder ? getStepIndex(foundOrder.status) : 0;
 
   return (
@@ -94,8 +106,8 @@ function MeuPedidoPage() {
         <>
           {foundOrder ? (
             <div className="space-y-8 animate-fade-in">
-              {/* Exibe o Código de Rastreio APENAS se o pedido estiver com status 'Enviado' (não concluído) */}
-              {foundOrder.trackingCode && foundOrder.status === "Enviado" ? (
+              {/* Exibe o Código de Rastreio APENAS se o pedido for Entrega e tiver código */}
+              {foundOrder.trackingCode && foundOrder.status === "Enviado" && !isRetirada ? (
                 <div className="p-6 border border-blue-500/30 bg-blue-500/10 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="space-y-1 text-center sm:text-left">
                     <span className="text-[11px] uppercase tracking-widest font-bold text-blue-600 dark:text-blue-400 flex items-center justify-center sm:justify-start gap-1.5">
@@ -129,13 +141,17 @@ function MeuPedidoPage() {
                     </Button>
                   </div>
                 </div>
-              ) : foundOrder.shippingOption === "retirada" && foundOrder.status !== "Concluído" ? (
+              ) : isRetirada && foundOrder.status !== "Concluído" ? (
                 <div className="p-6 border border-emerald-500/30 bg-emerald-500/10 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="space-y-1 text-center sm:text-left">
                     <span className="text-[11px] uppercase tracking-widest font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-center sm:justify-start gap-1.5">
                       <Store className="h-4 w-4" /> Retirada na Loja Física
                     </span>
-                    <p className="font-semibold text-lg text-foreground">[endereço de retirada removido]</p>
+                    <p className="font-semibold text-lg text-foreground">
+                      {foundOrder.status === "Enviado"
+                        ? "🎉 Seu pedido já está PRONTO PARA RETIRADA na loja!"
+                        : "[endereço de retirada removido]"}
+                    </p>
                     <p className="text-xs text-muted-foreground">Apresente este código do pedido no balcão de atendimento para retirar.</p>
                   </div>
                 </div>
