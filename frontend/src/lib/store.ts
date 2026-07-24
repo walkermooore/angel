@@ -1,6 +1,16 @@
 import { useSyncExternalStore } from "react";
 import { products as seedProducts, type Product } from "./products";
 import { auditApi } from "./auditStore";
+import {
+  getProductsFromBackend,
+  createProductInBackend,
+  updateProductInBackend,
+  deleteProductFromBackend,
+  getOrdersFromBackend,
+  createOrderInBackend,
+  updateOrderStatusInBackend,
+  updateOrderTrackingInBackend,
+} from "./api";
 
 export type OrderStatus = "Pendente" | "Pago" | "Enviado" | "Concluído";
 export type ShippingOption = "entrega" | "retirada";
@@ -12,6 +22,7 @@ export interface OrderItem {
   quantity: number;
   image: string;
 }
+
 export interface Order {
   id: string;
   number: string;
@@ -73,7 +84,6 @@ function loadProducts(): Product[] {
     const raw = localStorage.getItem(PRODUCTS_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(seedProducts));
   return seedProducts;
 }
 
@@ -86,7 +96,6 @@ function loadOrders(): Order[] {
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
   } catch {}
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(seedOrders));
   return seedOrders;
 }
 
@@ -114,6 +123,62 @@ function createStore<T>(key: string, initial: () => T) {
 export const productStore = createStore<Product[]>(PRODUCTS_KEY, loadProducts);
 export const orderStore = createStore<Order[]>(ORDERS_KEY, loadOrders);
 
+// Background sync with Spring Boot backend
+if (typeof window !== "undefined") {
+  getProductsFromBackend().then((remoteProds) => {
+    if (remoteProds && Array.isArray(remoteProds) && remoteProds.length > 0) {
+      const mapped = remoteProds.map((p: any) => ({
+        id: String(p.id),
+        name: p.name,
+        category: p.category || "prata",
+        price: Number(p.price || 0),
+        originalPrice: p.originalPrice ? Number(p.originalPrice) : undefined,
+        rating: p.rating ? Number(p.rating) : 5.0,
+        reviewsCount: p.reviewsCount ? Number(p.reviewsCount) : 0,
+        image: p.image || seedProducts[0].image,
+        description: p.description || "",
+        details: p.details || [],
+        inStock: p.inStock !== false,
+      }));
+      productStore.set(mapped);
+    }
+  });
+
+  getOrdersFromBackend().then((remoteOrders) => {
+    if (remoteOrders && Array.isArray(remoteOrders) && remoteOrders.length > 0) {
+      const mapped: Order[] = remoteOrders.map((o: any) => ({
+        id: String(o.id),
+        number: o.number || "ANG-1001",
+        email: o.email || "",
+        createdAt: o.createdAt || new Date().toISOString(),
+        items: (o.items || []).map((i: any) => ({
+          productId: String(i.productId || ""),
+          name: i.name || "",
+          price: Number(i.price || 0),
+          quantity: Number(i.quantity || 1),
+          image: i.image || "",
+        })),
+        subtotal: Number(o.subtotal || o.total || 0),
+        shipping: Number(o.shipping || 0),
+        total: Number(o.total || 0),
+        status: (o.status?.description || o.status || "Pendente") as OrderStatus,
+        shippingOption: (o.shippingOption as ShippingOption) || "entrega",
+        trackingCode: o.trackingCode || "",
+        payment: o.payment === "PIX" ? "PIX" : o.payment === "BOLETO" ? "Boleto" : "Cartão",
+        address: o.address || {
+          cep: "",
+          street: "",
+          number: "",
+          neighborhood: "",
+          city: "",
+          state: "",
+        },
+      }));
+      orderStore.set(mapped);
+    }
+  });
+}
+
 export function useProducts(): Product[] {
   return useSyncExternalStore(productStore.subscribe, productStore.get, () => seedProducts);
 }
@@ -126,13 +191,18 @@ export const productsApi = {
   all: () => productStore.get(),
   add: (p: Omit<Product, "id"> & { id?: string }) => {
     const id = p.id ?? crypto.randomUUID();
-    productStore.set([{ ...p, id }, ...productStore.get()]);
+    const newProd = { ...p, id };
+    productStore.set([newProd, ...productStore.get()]);
+    createProductInBackend(newProd);
   },
   update: (id: string, patch: Partial<Product>) => {
     productStore.set(productStore.get().map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    const updated = productStore.get().find((p) => p.id === id);
+    if (updated) updateProductInBackend(id, updated);
   },
   remove: (id: string) => {
     productStore.set(productStore.get().filter((p) => p.id !== id));
+    deleteProductFromBackend(id);
   },
 };
 
@@ -150,6 +220,9 @@ export const ordersApi = {
     };
     orderStore.set([order, ...orderStore.get()]);
 
+    // Async sync to backend Spring Boot DB
+    createOrderInBackend(order);
+
     // Record audit log
     auditApi.log(
       number,
@@ -163,6 +236,7 @@ export const ordersApi = {
   updateStatus: (id: string, status: OrderStatus) => {
     const current = orderStore.get().find((o) => o.id === id);
     orderStore.set(orderStore.get().map((o) => (o.id === id ? { ...o, status } : o)));
+    updateOrderStatusInBackend(id, status);
 
     if (current) {
       auditApi.log(
@@ -176,6 +250,13 @@ export const ordersApi = {
   updateOrder: (id: string, patch: Partial<Order>) => {
     const current = orderStore.get().find((o) => o.id === id);
     orderStore.set(orderStore.get().map((o) => (o.id === id ? { ...o, ...patch } : o)));
+
+    if (patch.status) {
+      updateOrderStatusInBackend(id, patch.status);
+    }
+    if (patch.trackingCode !== undefined) {
+      updateOrderTrackingInBackend(id, patch.trackingCode);
+    }
 
     if (current) {
       let logMsg = "";

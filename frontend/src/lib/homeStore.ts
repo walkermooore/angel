@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import heroImg from "@/assets/hero.jpg";
+import { getHomeSettingsFromBackend, saveHomeSettingsToBackend } from "./api";
 
 export interface ValueItem {
   id?: string;
@@ -42,13 +43,12 @@ function loadSettings(): HomeSettings {
         ...parsed,
         values: Array.isArray(parsed.values) && parsed.values.length > 0 ? parsed.values : defaultSettings.values,
         highlightIds:
-          Array.isArray(parsed.highlightIds) && parsed.highlightIds.length >= 1 && parsed.highlightIds.length <= 5
+          Array.isArray(parsed.highlightIds) && parsed.highlightIds.length >= 1
             ? parsed.highlightIds
             : defaultSettings.highlightIds,
       };
     }
   } catch {}
-  localStorage.setItem(HOME_KEY, JSON.stringify(defaultSettings));
   return defaultSettings;
 }
 
@@ -58,6 +58,21 @@ const listeners = new Set<Listener>();
 
 function emit() {
   listeners.forEach((l) => l());
+}
+
+if (typeof window !== "undefined") {
+  getHomeSettingsFromBackend().then((remoteSettings) => {
+    if (remoteSettings && remoteSettings.heroTitle) {
+      state = {
+        heroTitle: remoteSettings.heroTitle,
+        heroDescription: remoteSettings.heroDescription || defaultSettings.heroDescription,
+        heroImage: remoteSettings.heroImage || defaultSettings.heroImage,
+        values: remoteSettings.values && remoteSettings.values.length > 0 ? remoteSettings.values : defaultSettings.values,
+        highlightIds: remoteSettings.highlightIds && remoteSettings.highlightIds.length > 0 ? remoteSettings.highlightIds : defaultSettings.highlightIds,
+      };
+      emit();
+    }
+  });
 }
 
 export const homeStore = {
@@ -70,6 +85,7 @@ export const homeStore = {
       }
     } catch {}
     emit();
+    saveHomeSettingsToBackend(next);
   },
   subscribe: (l: Listener) => {
     listeners.add(l);

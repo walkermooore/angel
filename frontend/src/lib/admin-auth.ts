@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { loginAdminBackend } from "./api";
 
 const KEY = "angel:admin";
 const ADMIN_EMAIL = "admin@example.invalid";
@@ -32,6 +33,14 @@ export const adminAuth = {
   login(email: string, password: string): boolean {
     const cleanEmail = (email || "").trim().toLowerCase();
     const cleanPass = (password || "").trim();
+
+    // Call backend API (async in background) while maintaining synchronous return
+    loginAdminBackend(cleanEmail, cleanPass).then((res) => {
+      if (res && res.success && res.token) {
+        localStorage.setItem("angel:admin_token", res.token);
+      }
+    });
+
     if (cleanEmail === ADMIN_EMAIL.toLowerCase() && cleanPass === ADMIN_PASS) {
       localStorage.setItem(KEY, "1");
       emit();
@@ -41,6 +50,7 @@ export const adminAuth = {
   },
   logout() {
     localStorage.removeItem(KEY);
+    localStorage.removeItem("angel:admin_token");
     emit();
   },
   isAuthed: () => getSnapshot(),

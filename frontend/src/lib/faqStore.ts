@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { getFaqsFromBackend, createFaqInBackend, updateFaqInBackend, deleteFaqFromBackend } from "./api";
 
 export interface FaqItem {
   id: string;
@@ -19,16 +20,6 @@ const seedFaqs: FaqItem[] = [
     question: "Como funciona o envio e a opção de retirar na loja?",
     answer: "Oferecemos frete grátis para compras acima de R$ 250,00 e também a opção de Retirada Grátis em nossa loja física em Cuiabá/MT ([endereço de retirada removido]).",
   },
-  {
-    id: "faq-3",
-    question: "Como enviar meu pedido via WhatsApp?",
-    answer: "Após finalizar a compra no checkout, um código único do pedido é gerado e você pode enviá-lo diretamente para nosso atendimento no WhatsApp ([contato removido]).",
-  },
-  {
-    id: "faq-4",
-    question: "Qual o prazo de troca?",
-    answer: "Você tem até 30 dias após o recebimento para solicitar a troca por outro produto ou tamanho.",
-  },
 ];
 
 function loadFaqs(): FaqItem[] {
@@ -40,7 +31,6 @@ function loadFaqs(): FaqItem[] {
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
   } catch {}
-  localStorage.setItem(FAQ_KEY, JSON.stringify(seedFaqs));
   return seedFaqs;
 }
 
@@ -50,6 +40,19 @@ const listeners = new Set<Listener>();
 
 function emit() {
   listeners.forEach((l) => l());
+}
+
+if (typeof window !== "undefined") {
+  getFaqsFromBackend().then((remoteFaqs) => {
+    if (remoteFaqs && Array.isArray(remoteFaqs) && remoteFaqs.length > 0) {
+      state = remoteFaqs.map((f: any) => ({
+        id: String(f.id),
+        question: f.question,
+        answer: f.answer,
+      }));
+      emit();
+    }
+  });
 }
 
 export const faqStore = {
@@ -79,13 +82,16 @@ export const faqApi = {
       answer,
     };
     faqStore.set([...faqStore.get(), newFaq]);
+    createFaqInBackend({ question, answer, category: "Geral" });
   },
   update: (id: string, question: string, answer: string) => {
     faqStore.set(
       faqStore.get().map((f) => (f.id === id ? { ...f, question, answer } : f))
     );
+    updateFaqInBackend(id, { question, answer, category: "Geral" });
   },
   remove: (id: string) => {
     faqStore.set(faqStore.get().filter((f) => f.id !== id));
+    deleteFaqFromBackend(id);
   },
 };

@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { getAuditLogsFromBackend, createAuditLogBackend } from "./api";
 
 export interface AuditLog {
   id: string;
@@ -28,14 +29,6 @@ const seedLogs: AuditLog[] = [
     user: "admin@example.invalid",
     details: "Status atualizado para 'Pago' após verificação de pagamento",
   },
-  {
-    id: "log-3",
-    timestamp: new Date(Date.now() - 3600000 * 0.5).toISOString(),
-    orderNumber: "ANG-20260723-9482",
-    action: "Rastreio Inserido",
-    user: "admin@example.invalid",
-    details: "Código de rastreio cadastrado: AA123456789BR (Status: Enviado)",
-  },
 ];
 
 function loadAuditLogs(): AuditLog[] {
@@ -47,7 +40,6 @@ function loadAuditLogs(): AuditLog[] {
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
   } catch {}
-  localStorage.setItem(AUDIT_KEY, JSON.stringify(seedLogs));
   return seedLogs;
 }
 
@@ -57,6 +49,16 @@ const listeners = new Set<Listener>();
 
 function emit() {
   listeners.forEach((l) => l());
+}
+
+// Sync with backend API
+if (typeof window !== "undefined") {
+  getAuditLogsFromBackend().then((remoteLogs) => {
+    if (remoteLogs && Array.isArray(remoteLogs) && remoteLogs.length > 0) {
+      state = remoteLogs;
+      emit();
+    }
+  });
 }
 
 export const auditStore = {
@@ -89,5 +91,6 @@ export const auditApi = {
       details,
     };
     auditStore.set([newLog, ...auditStore.get()]);
+    createAuditLogBackend(orderNumber, action, user, details);
   },
 };
