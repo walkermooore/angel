@@ -4,10 +4,10 @@ import { useCart, formatBRL } from "@/lib/cart";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ordersApi } from "@/lib/store";
 import { toast } from "sonner";
-import { QrCode, CreditCard, FileText, ShieldCheck, MapPin, Phone, MessageCircle, Store, Truck } from "lucide-react";
+import { QrCode, CreditCard, FileText, ShieldCheck, MapPin, Phone, Mail, Store, Truck } from "lucide-react";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({ meta: [{ title: "Checkout — Angel" }, { name: "robots", content: "noindex" }] }),
@@ -32,6 +32,7 @@ function CheckoutPage() {
   const navigate = useNavigate();
 
   const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
   const [form, setForm] = useState({
     street: "",
     number: "",
@@ -89,6 +90,10 @@ function CheckoutPage() {
       toast.error("Sua sacola está vazia.");
       return;
     }
+    if (!customerEmail || !customerEmail.includes("@")) {
+      toast.error("Informe um e-mail válido.");
+      return;
+    }
     const cleanPhone = phone.replace(/\D/g, "");
     if (cleanPhone.length < 10) {
       toast.error("Informe um telefone com DDD válido.");
@@ -103,7 +108,7 @@ function CheckoutPage() {
     const finalTotal = subtotal + finalShipping;
 
     const order = ordersApi.create({
-      email: phone,
+      email: customerEmail.trim(),
       items: items.map((i) => ({
         productId: i.product.id,
         name: i.product.name,
@@ -118,22 +123,6 @@ function CheckoutPage() {
       payment,
       address: { cep, ...form },
     });
-
-    const itemsList = items
-      .map((i) => `- ${i.product.name} (x${i.quantity}) — ${formatBRL((i.product.discountPrice ?? i.product.price) * i.quantity)}`)
-      .join("\n");
-
-    const envText = shippingOption === "retirada"
-      ? `🏬 *Modo:* Retirada na Loja Física (Grátis)\n📍 Endereço da Loja: [endereço de retirada removido]`
-      : `🚚 *Modo:* Entrega no Endereço\n📍 Endereço: ${form.street}, Nº ${form.number}${form.complement ? " (" + form.complement + ")" : ""}\n${form.neighborhood} - ${form.city}/${form.state} (CEP: ${cep})`;
-
-    const message = `Olá! Acabei de fazer um pedido na Angel 💖\n\n` +
-      `📦 *Código do Pedido:* ${order.number}\n` +
-      `👤 *Cliente:* ${customerName || "Cliente"} (${phone})\n` +
-      `💵 *Valor Total:* ${formatBRL(finalTotal)}\n` +
-      `💳 *Forma de Pagamento:* ${payment}\n\n` +
-      `${envText}\n\n` +
-      `🛒 *Itens:*\n${itemsList}`;
 
     clear();
     toast.success("Pedido realizado com sucesso!", { description: `Código: ${order.number}` });
@@ -188,18 +177,29 @@ function CheckoutPage() {
             )}
           </section>
 
-          {/* Contato pelo Telefone */}
+          {/* Contato do Cliente (Nome, E-mail, Telefone) */}
           <section>
             <h2 className="font-display text-2xl mb-5 flex items-center gap-2">
-              <Phone className="h-5 w-5" /> Contato
+              <Mail className="h-5 w-5" /> Dados de Contato
             </h2>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-3 gap-4">
               <div>
                 <Label className="text-xs uppercase tracking-widest">Seu Nome</Label>
                 <Input
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="Nome completo"
+                  className="h-11 mt-1.5"
+                  required
+                />
+              </div>
+              <div>
+                <Label className="text-xs uppercase tracking-widest">Seu E-mail</Label>
+                <Input
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="seuemail@exemplo.com"
                   className="h-11 mt-1.5"
                   required
                 />
@@ -218,177 +218,191 @@ function CheckoutPage() {
             </div>
           </section>
 
-          {/* Endereço de entrega / Retirada */}
-          <section>
-            <div className="flex items-center justify-between mb-5">
+          {/* Endereço de Entrega */}
+          {shippingOption === "entrega" && (
+            <section className="space-y-4">
               <h2 className="font-display text-2xl flex items-center gap-2">
-                <MapPin className="h-5 w-5" /> {shippingOption === "retirada" ? "Local de Retirada" : "Endereço de entrega"}
+                <MapPin className="h-5 w-5" /> Endereço de Entrega
               </h2>
-              {loadingCep && <span className="text-xs text-muted-foreground animate-pulse">Buscando CEP...</span>}
-            </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs uppercase tracking-widest">CEP</Label>
-                <Input
-                  value={cep}
-                  onChange={(e) => setCep(e.target.value.replace(/\D/g, "").slice(0, 8))}
-                  placeholder="00000-000"
-                  className="h-11 mt-1.5"
-                  required
-                  disabled={shippingOption === "retirada"}
-                />
-              </div>
-
-              <div className="sm:col-span-2 grid grid-cols-[1fr_120px] gap-4">
+              <div className="grid sm:grid-cols-3 gap-4">
                 <div>
+                  <Label className="text-xs uppercase tracking-widest">CEP</Label>
+                  <Input
+                    value={cep}
+                    onChange={(e) => setCep(e.target.value)}
+                    placeholder="78000-000"
+                    maxLength={9}
+                    className="h-11 mt-1.5"
+                    required
+                  />
+                  {loadingCep && <p className="text-[10px] text-muted-foreground mt-1 animate-pulse">Buscando CEP...</p>}
+                </div>
+                <div className="sm:col-span-2">
                   <Label className="text-xs uppercase tracking-widest">Rua / Logradouro</Label>
                   <Input
-                    required
                     value={form.street}
                     onChange={(e) => setForm({ ...form, street: e.target.value })}
-                    placeholder="Rua, Avenida..."
+                    placeholder="Av. Getúlio Vargas"
                     className="h-11 mt-1.5"
-                    disabled={shippingOption === "retirada"}
+                    required
                   />
                 </div>
+              </div>
+
+              <div className="grid sm:grid-cols-3 gap-4">
                 <div>
                   <Label className="text-xs uppercase tracking-widest">Número</Label>
                   <Input
-                    required
                     value={form.number}
                     onChange={(e) => setForm({ ...form, number: e.target.value })}
                     placeholder="123"
                     className="h-11 mt-1.5"
-                    disabled={shippingOption === "retirada"}
+                    required
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Label className="text-xs uppercase tracking-widest">Complemento (opcional)</Label>
+                  <Input
+                    value={form.complement}
+                    onChange={(e) => setForm({ ...form, complement: e.target.value })}
+                    placeholder="Apto, Bloco, etc."
+                    className="h-11 mt-1.5"
                   />
                 </div>
               </div>
 
-              <div className="sm:col-span-2">
-                <Label className="text-xs uppercase tracking-widest">Complemento</Label>
-                <Input
-                  value={form.complement}
-                  onChange={(e) => setForm({ ...form, complement: e.target.value })}
-                  placeholder="Apto, Bloco..."
-                  className="h-11 mt-1.5"
-                  disabled={shippingOption === "retirada"}
-                />
+              <div className="grid sm:grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-xs uppercase tracking-widest">Bairro</Label>
+                  <Input
+                    value={form.neighborhood}
+                    onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
+                    placeholder="Centro"
+                    className="h-11 mt-1.5"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs uppercase tracking-widest">Cidade</Label>
+                  <Input
+                    value={form.city}
+                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                    placeholder="Cuiabá"
+                    className="h-11 mt-1.5"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs uppercase tracking-widest">UF</Label>
+                  <Input
+                    value={form.state}
+                    onChange={(e) => setForm({ ...form, state: e.target.value })}
+                    placeholder="MT"
+                    maxLength={2}
+                    className="h-11 mt-1.5 uppercase"
+                    required
+                  />
+                </div>
               </div>
-
-              <div>
-                <Label className="text-xs uppercase tracking-widest">Bairro</Label>
-                <Input
-                  required
-                  value={form.neighborhood}
-                  onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
-                  className="h-11 mt-1.5"
-                  disabled={shippingOption === "retirada"}
-                />
-              </div>
-
-              <div>
-                <Label className="text-xs uppercase tracking-widest">Cidade</Label>
-                <Input
-                  required
-                  value={form.city}
-                  onChange={(e) => setForm({ ...form, city: e.target.value })}
-                  className="h-11 mt-1.5"
-                  disabled={shippingOption === "retirada"}
-                />
-              </div>
-
-              <div>
-                <Label className="text-xs uppercase tracking-widest">Estado (UF)</Label>
-                <Input
-                  required
-                  maxLength={2}
-                  value={form.state}
-                  onChange={(e) => setForm({ ...form, state: e.target.value.toUpperCase() })}
-                  placeholder="MT"
-                  className="h-11 mt-1.5"
-                  disabled={shippingOption === "retirada"}
-                />
-              </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           {/* Pagamento */}
-          <section>
-            <h2 className="font-display text-2xl mb-5">Pagamento</h2>
-            <Tabs value={payment} onValueChange={(v) => setPayment(v as typeof payment)}>
-              <TabsList className="grid grid-cols-3 w-full">
-                <TabsTrigger value="PIX"><QrCode className="h-4 w-4 mr-2" />PIX</TabsTrigger>
-                <TabsTrigger value="Cartão"><CreditCard className="h-4 w-4 mr-2" />Cartão</TabsTrigger>
-                <TabsTrigger value="Boleto"><FileText className="h-4 w-4 mr-2" />Boleto</TabsTrigger>
-              </TabsList>
-              <TabsContent value="PIX" className="mt-6 p-6 border border-border rounded-lg text-center">
-                <div className="mx-auto w-40 h-40 bg-[repeating-conic-gradient(#111_0_25%,#fff_0_50%)] bg-[length:12px_12px] rounded-md" aria-label="QR Code" />
-                <p className="mt-4 text-sm text-muted-foreground">Escaneie o QR Code no app do seu banco.</p>
-                <p className="text-xs text-muted-foreground mt-1">Pagamento aprovado instantaneamente.</p>
-              </TabsContent>
-              <TabsContent value="Cartão" className="mt-6 grid gap-4">
+          <section className="space-y-4">
+            <h2 className="font-display text-2xl">Forma de Pagamento</h2>
+            <div className="grid sm:grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={() => setPayment("PIX")}
+                className={`p-4 rounded-xl border text-left flex items-center gap-3 transition-all ${
+                  payment === "PIX" ? "border-foreground bg-secondary font-semibold" : "border-border hover:bg-secondary/50"
+                }`}
+              >
+                <QrCode className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 <div>
-                  <Label className="text-xs uppercase tracking-widest">Número do cartão</Label>
-                  <Input placeholder="0000 0000 0000 0000" className="h-11 mt-1.5" />
+                  <p className="text-sm">PIX</p>
+                  <p className="text-[10px] text-muted-foreground">Aprovação instantânea</p>
                 </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPayment("Cartão")}
+                className={`p-4 rounded-xl border text-left flex items-center gap-3 transition-all ${
+                  payment === "Cartão" ? "border-foreground bg-secondary font-semibold" : "border-border hover:bg-secondary/50"
+                }`}
+              >
+                <CreditCard className="h-5 w-5 text-sky-600 dark:text-sky-400" />
                 <div>
-                  <Label className="text-xs uppercase tracking-widest">Nome impresso</Label>
-                  <Input placeholder="COMO NO CARTÃO" className="h-11 mt-1.5" />
+                  <p className="text-sm">Cartão de Crédito</p>
+                  <p className="text-[10px] text-muted-foreground">Até 6x sem juros</p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs uppercase tracking-widest">Validade</Label>
-                    <Input placeholder="MM/AA" className="h-11 mt-1.5" />
-                  </div>
-                  <div>
-                    <Label className="text-xs uppercase tracking-widest">CVV</Label>
-                    <Input placeholder="000" className="h-11 mt-1.5" />
-                  </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPayment("Boleto")}
+                className={`p-4 rounded-xl border text-left flex items-center gap-3 transition-all ${
+                  payment === "Boleto" ? "border-foreground bg-secondary font-semibold" : "border-border hover:bg-secondary/50"
+                }`}
+              >
+                <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <div>
+                  <p className="text-sm">Boleto Bancário</p>
+                  <p className="text-[10px] text-muted-foreground">Vencimento em 3 dias</p>
                 </div>
-              </TabsContent>
-              <TabsContent value="Boleto" className="mt-6 p-6 border border-border rounded-lg">
-                <p className="text-sm">O boleto será gerado e enviado para confirmação via WhatsApp.</p>
-                <p className="text-xs text-muted-foreground mt-2">Vencimento em 3 dias úteis.</p>
-              </TabsContent>
-            </Tabs>
+              </button>
+            </div>
           </section>
         </div>
 
-        <aside className="lg:sticky lg:top-24 h-fit border border-border rounded-lg p-6 bg-secondary/20 space-y-4">
-          <h3 className="font-display text-xl">Resumo do pedido</h3>
-          <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-            {items.map(({ product, quantity }) => {
-              const itemPrice = product.discountPrice ?? product.price;
-              return (
-                <div key={product.id} className="flex gap-3 items-center">
-                  <img src={product.image} alt="" className="w-12 h-14 object-cover rounded bg-muted shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate font-medium">{product.name}</p>
-                    <p className="text-xs text-muted-foreground">Qtd: {quantity}</p>
+        {/* Resumo do Pedido */}
+        <div className="space-y-6">
+          <div className="border border-border rounded-2xl p-6 bg-secondary/20 sticky top-24">
+            <h2 className="font-display text-2xl mb-6">Resumo</h2>
+
+            <div className="space-y-4 max-h-60 overflow-y-auto pr-1">
+              {items.map((item) => (
+                <div key={item.product.id} className="flex items-center justify-between text-sm gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <img src={item.product.image} alt={item.product.name} className="w-12 h-12 object-cover rounded-lg shrink-0" />
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{item.product.name}</p>
+                      <p className="text-xs text-muted-foreground">Qtd: {item.quantity}</p>
+                    </div>
                   </div>
-                  <span className="text-sm tabular-nums font-semibold">{formatBRL(itemPrice * quantity)}</span>
+                  <span className="font-medium shrink-0">
+                    {formatBRL((item.product.discountPrice ?? item.product.price) * item.quantity)}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-          <div className="pt-4 border-t border-border/60 space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">{formatBRL(subtotal)}</span></div>
-            <div className="flex justify-between font-medium">
-              <span className="text-muted-foreground">Frete</span>
-              <span className="tabular-nums">
-                {shippingOption === "retirada" ? "Grátis (Retirada)" : shipping === 0 ? "Grátis" : formatBRL(shipping)}
-              </span>
+              ))}
             </div>
-            <div className="flex justify-between pt-2 border-t border-border/60"><span>Total</span><span className="font-display text-xl">{formatBRL(shippingOption === "retirada" ? subtotal : total)}</span></div>
+
+            <div className="border-t border-border mt-6 pt-4 space-y-2 text-sm">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Subtotal</span>
+                <span>{formatBRL(subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>Frete</span>
+                <span>{shippingOption === "retirada" ? "Grátis" : shipping === 0 ? "Grátis" : formatBRL(shipping)}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold text-foreground border-t border-border pt-3">
+                <span>Total</span>
+                <span>{formatBRL(subtotal + (shippingOption === "retirada" ? 0 : shipping))}</span>
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full mt-6 rounded-full h-12 text-sm uppercase tracking-widest font-bold">
+              Confirmar e Pagar
+            </Button>
+
+            <p className="text-[11px] text-center text-muted-foreground mt-4 flex items-center justify-center gap-1">
+              <ShieldCheck className="h-4 w-4 text-emerald-600" /> Compra 100% segura e criptografada
+            </p>
           </div>
-          <Button type="submit" className="w-full h-12 rounded-full uppercase tracking-widest text-xs gap-2">
-            <MessageCircle className="h-4 w-4" /> Finalizar & Enviar WhatsApp
-          </Button>
-          <p className="flex items-center gap-2 text-xs text-muted-foreground justify-center text-center">
-            <ShieldCheck className="h-3.5 w-3.5 shrink-0" /> Atendimento direto no [contato removido]
-          </p>
-        </aside>
+        </div>
       </form>
     </div>
   );
