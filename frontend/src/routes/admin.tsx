@@ -30,7 +30,7 @@ function AdminLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row">
       <AdminSidebar />
       <main className="flex-1 min-w-0">
         <Outlet />
