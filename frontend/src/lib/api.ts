@@ -1,14 +1,22 @@
-export const API_BASE = "http://localhost:8081/api";
+const configuredApiUrl = import.meta.env.VITE_API_URL || "http://localhost:8081/api";
+export const API_BASE = configuredApiUrl.replace(/\/+$/, "");
+
+function authorizationHeader(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  const token = localStorage.getItem("angel:admin_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 // Helper fetch wrapper
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
   try {
     const res = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
       headers: {
         "Content-Type": "application/json",
+        ...authorizationHeader(),
         ...(options?.headers || {}),
       },
-      ...options,
     });
     if (res.ok) {
       if (res.status === 240 || res.status === 204) return true as unknown as T;
@@ -18,6 +26,24 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T |
     // API server unreachable fallback
   }
   return null;
+}
+
+async function apiMutation<T>(endpoint: string, options: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...authorizationHeader(),
+      ...(options.headers || {}),
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`A API respondeu com o status ${res.status}.`);
+  }
+
+  if (res.status === 204) return true as T;
+  return res.json() as Promise<T>;
 }
 
 // Products
@@ -47,9 +73,9 @@ export const getOrdersFromBackend = () => apiFetch<any[]>("/pedidos");
 export const createOrderInBackend = (orderData: any) => apiFetch("/pedidos", { method: "POST", body: JSON.stringify(orderData) });
 export const getOrderFromBackend = (idOrNumber: string) => apiFetch<any>(`/pedidos/${idOrNumber}`);
 export const updateOrderStatusInBackend = (id: string, status: string) =>
-  apiFetch(`/pedidos/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
+  apiMutation<any>(`/pedidos/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
 export const updateOrderTrackingInBackend = (id: string, trackingCode: string) =>
-  apiFetch(`/pedidos/${id}/tracking-code`, { method: "PATCH", body: JSON.stringify({ trackingCode }) });
+  apiMutation<any>(`/pedidos/${id}/tracking-code`, { method: "PATCH", body: JSON.stringify({ trackingCode }) });
 
 // Audit Logs
 export const getAuditLogsFromBackend = () => apiFetch<any[]>("/auditoria");
@@ -70,3 +96,7 @@ export const saveHomeSettingsToBackend = (settings: any) => apiFetch("/home-sett
 export const getAboutSettingsFromBackend = () => apiFetch<any>("/sobre-nos");
 export const saveAboutSettingsToBackend = (settings: any) => apiFetch("/sobre-nos", { method: "PUT", body: JSON.stringify(settings) });
 
+// Institutional pages
+export const getInstitutionalSettingsFromBackend = () => apiFetch<any>("/paginas-institucionais");
+export const saveInstitutionalSettingsToBackend = (settings: any) =>
+  apiMutation<any>("/paginas-institucionais", { method: "PUT", body: JSON.stringify(settings) });

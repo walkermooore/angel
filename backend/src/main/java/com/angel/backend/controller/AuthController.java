@@ -3,10 +3,13 @@ package com.angel.backend.controller;
 import com.angel.backend.dto.LoginRequest;
 import com.angel.backend.model.AdminUser;
 import com.angel.backend.repository.AdminUserRepository;
+import com.angel.backend.service.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -17,10 +20,13 @@ import java.util.Optional;
 public class AuthController {
 
     private final AdminUserRepository adminUserRepository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public AuthController(AdminUserRepository adminUserRepository) {
+    public AuthController(AdminUserRepository adminUserRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.adminUserRepository = adminUserRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/login")
@@ -31,21 +37,10 @@ public class AuthController {
         Optional<AdminUser> adminOpt = adminUserRepository.findByEmailIgnoreCase(email);
         if (adminOpt.isPresent()) {
             AdminUser user = adminOpt.get();
-            boolean matches = false;
-
-            if (user.getPassword().startsWith("$2a$") || user.getPassword().startsWith("$2b$") || user.getPassword().startsWith("$2y$")) {
-                matches = passwordEncoder.matches(pass, user.getPassword());
-            } else if (user.getPassword().equals(pass)) {
-                // Auto-upgrade legacy plaintext password to BCrypt hash in PostgreSQL
-                user.setPassword(passwordEncoder.encode(pass));
-                adminUserRepository.save(user);
-                matches = true;
-            }
-
-            if (matches) {
+            if (passwordEncoder.matches(pass, user.getPassword())) {
                 return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "token", "angel-token-" + user.getId(),
+                    "token", jwtService.createToken(user),
                     "user", Map.of(
                         "id", user.getId(),
                         "name", user.getName(),
@@ -56,40 +51,19 @@ public class AuthController {
             }
         }
 
-        // Fallback for default demo credential
-        if ("admin@example.invalid".equalsIgnoreCase(email) && "admin123".equals(pass)) {
-            // Register or update in PostgreSQL with BCrypt hash
-            AdminUser newAdmin = adminOpt.orElseGet(AdminUser::new);
-            newAdmin.setName("Administradora Angel");
-            newAdmin.setEmail("admin@example.invalid");
-            newAdmin.setPassword(passwordEncoder.encode("admin123"));
-            newAdmin.setRole("ADMIN");
-            adminUserRepository.save(newAdmin);
-
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "token", "angel-admin-token-12345",
-                "user", Map.of("email", "admin@example.invalid", "role", "ADMIN")
-            ));
-        }
-
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .body(Map.of("success", false, "message", "Credenciais inválidas."));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> currentAdmin() {
-        return adminUserRepository.findByEmailIgnoreCase("admin@example.invalid")
+    public ResponseEntity<?> currentAdmin(@AuthenticationPrincipal Jwt jwt) {
+        return adminUserRepository.findByEmailIgnoreCase(jwt.getSubject())
             .map(u -> ResponseEntity.ok(Map.of(
                 "id", u.getId(),
                 "name", u.getName(),
                 "email", u.getEmail(),
                 "role", u.getRole()
             )))
-            .orElseGet(() -> ResponseEntity.ok(Map.of(
-                "name", "Administradora Angel",
-                "email", "admin@example.invalid",
-                "role", "ADMIN"
-            )));
+            .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

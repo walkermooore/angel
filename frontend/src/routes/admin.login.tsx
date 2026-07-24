@@ -19,17 +19,21 @@ function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const fillDemo = () => {
-    setEmail(adminAuth.credentials.email);
-    setPassword(adminAuth.credentials.password);
-  };
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminAuth.login(email, password)) {
-      navigate({ to: "/admin" });
-    } else {
-      toast.error("Credenciais inválidas. Use a conta de demonstração.");
+    setSubmitting(true);
+    try {
+      if (await adminAuth.login(email, password)) {
+        navigate({ to: "/admin", replace: true });
+      } else {
+        toast.error("Credenciais inválidas.");
+      }
+    } catch {
+      toast.error("Não foi possível acessar o servidor de autenticação.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -71,17 +75,9 @@ function AdminLogin() {
               required
             />
           </div>
-          <Button type="submit" className="w-full h-11 rounded-full uppercase tracking-widest text-xs">
-            Entrar
+          <Button type="submit" disabled={submitting} className="w-full h-11 rounded-full uppercase tracking-widest text-xs">
+            {submitting ? "Entrando..." : "Entrar"}
           </Button>
-
-          <div
-            onClick={fillDemo}
-            className="text-xs text-muted-foreground text-center mt-4 cursor-pointer hover:text-foreground transition-colors p-2 rounded border border-border/50 bg-secondary/20"
-          >
-            Clique aqui para preencher a conta demo: <br />
-            <strong>{adminAuth.credentials.email}</strong> / <strong>{adminAuth.credentials.password}</strong>
-          </div>
         </div>
       </form>
     </div>
