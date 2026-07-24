@@ -19,6 +19,7 @@ import {
   ChevronRight,
   ShoppingBag,
   Activity,
+  FileText,
 } from "lucide-react";
 import { useState } from "react";
 import { adminAuth } from "@/lib/admin-auth";
@@ -33,6 +34,7 @@ type AdminRoute =
   | "/admin/pedidos"
   | "/admin/sobre"
   | "/admin/faq"
+  | "/admin/configuracoes"
   | "/admin/auditoria";
 
 interface NavItem {
@@ -284,6 +286,18 @@ export function AdminSidebar() {
                   )}
                 >
                   <HelpCircle className="h-3.5 w-3.5 shrink-0" /> FAQ / Dúvidas
+                </Link>
+                <Link
+                  to="/admin/configuracoes"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs transition-all",
+                    pathname.startsWith("/admin/configuracoes")
+                      ? "bg-foreground text-background font-semibold shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                  )}
+                >
+                  <FileText className="h-3.5 w-3.5 shrink-0" /> Textos e Políticas
                 </Link>
               </div>
             )}
