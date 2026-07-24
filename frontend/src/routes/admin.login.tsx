@@ -1,9 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { adminAuth } from "@/lib/admin-auth";
+import { useTheme } from "@/lib/theme";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Sun, Moon } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/login")({
@@ -13,6 +15,7 @@ export const Route = createFileRoute("/admin/login")({
 
 function AdminLogin() {
   const navigate = useNavigate();
+  const { isDark, toggleTheme, mounted } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -32,7 +35,15 @@ function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-secondary/30 px-5">
+    <div className="min-h-screen flex items-center justify-center bg-secondary/30 px-5 relative">
+      <button
+        onClick={toggleTheme}
+        className="absolute top-6 right-6 p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground flex items-center gap-2 text-xs font-medium"
+        title={isDark ? "Modo Claro" : "Modo Noturno"}
+      >
+        {mounted && isDark ? <Sun className="h-5 w-5 text-amber-400" /> : <Moon className="h-5 w-5" />}
+      </button>
+
       <form onSubmit={submit} className="w-full max-w-sm bg-background border border-border rounded-xl p-8 shadow-sm">
         <div className="text-center mb-8">
           <p className="font-display text-4xl">Angel</p>

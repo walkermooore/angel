@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ShoppingBag, Menu, X, Search, Sun, Moon } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useCart } from "@/lib/cart";
+import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { SearchDialog } from "./SearchDialog";
 
@@ -18,31 +19,7 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    const saved = localStorage.getItem("angel:theme") as "light" | "dark";
-    if (saved) {
-      setTheme(saved);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-    localStorage.setItem("angel:theme", theme);
-  }, [theme, mounted]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-  };
+  const { isDark, toggleTheme, mounted } = useTheme();
 
   return (
     <header className="fixed top-0 inset-x-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/60">
@@ -71,10 +48,10 @@ export function Header() {
           <button
             onClick={toggleTheme}
             aria-label="Alternar modo noturno"
-            title={mounted && theme === "dark" ? "Modo claro" : "Modo noturno"}
+            title={mounted && isDark ? "Modo claro" : "Modo noturno"}
             className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
           >
-            {mounted && theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            {mounted && isDark ? <Sun className="h-5 w-5 text-amber-400" /> : <Moon className="h-5 w-5" />}
           </button>
 
           {/* Search Button */}
@@ -89,47 +66,45 @@ export function Header() {
           {/* Cart Button */}
           <button
             onClick={open}
-            aria-label="Abrir carrinho"
-            className="relative p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+            aria-label="Carrinho"
+            className="relative p-2 rounded-full hover:bg-secondary transition-colors text-foreground"
           >
             <ShoppingBag className="h-5 w-5" />
             {count > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 rounded-full bg-foreground text-background text-[10px] font-medium flex items-center justify-center animate-scale-in">
+              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-foreground text-background text-[11px] font-medium flex items-center justify-center">
                 {count}
               </span>
             )}
           </button>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileOpen((v) => !v)}
+            className="md:hidden p-2 rounded-full hover:bg-secondary text-foreground"
             aria-label="Menu"
-            className="md:hidden p-2 rounded-full hover:bg-secondary transition-colors"
           >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden border-t border-border/60 bg-background animate-fade-in">
-          <nav className="flex flex-col p-4">
-            {links.map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                onClick={() => setMobileOpen(false)}
-                className={cn(
-                  "py-3 px-2 text-sm tracking-wide uppercase transition-colors",
-                  pathname === l.to ? "text-foreground" : "text-muted-foreground"
-                )}
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
+        <div className="md:hidden border-b border-border/60 bg-background px-6 py-4 space-y-3">
+          {links.map((l) => (
+            <Link
+              key={l.to}
+              to={l.to}
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                "block text-sm tracking-wide uppercase py-1.5 transition-colors",
+                pathname === l.to ? "text-foreground font-medium" : "text-muted-foreground"
+              )}
+            >
+              {l.label}
+            </Link>
+          ))}
         </div>
       )}
+
       <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
     </header>
   );
