@@ -82,13 +82,13 @@ export const faqApi = {
       answer,
     };
     faqStore.set([...faqStore.get(), newFaq]);
-    createFaqInBackend({ question, answer, category: "Geral" });
+    createFaqInBackend({ question, answer });
   },
   update: (id: string, question: string, answer: string) => {
     faqStore.set(
       faqStore.get().map((f) => (f.id === id ? { ...f, question, answer } : f))
     );
-    updateFaqInBackend(id, { question, answer, category: "Geral" });
+    updateFaqInBackend(id, { question, answer });
   },
   remove: (id: string) => {
     faqStore.set(faqStore.get().filter((f) => f.id !== id));

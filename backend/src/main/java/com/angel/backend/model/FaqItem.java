@@ -26,11 +26,8 @@ public class FaqItem {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String answer;
 
-    private String category;
-
-    public FaqItem(String question, String answer, String category) {
+    public FaqItem(String question, String answer) {
         this.question = question;
         this.answer = answer;
-        this.category = category;
     }
 }

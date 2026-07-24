@@ -21,9 +21,9 @@ public class FaqController {
     @GetMapping
     public List<FaqItem> listarFaqs() {
         if (faqRepository.count() == 0) {
-            faqRepository.save(new FaqItem("Quais são as formas de pagamento?", "Aceitamos Pix, Cartão de Crédito em até 6x e Boleto Bancário.", "Pagamento"));
-            faqRepository.save(new FaqItem("As peças possuem garantia?", "Sim! Todas as nossas joias em Prata 925 acompanham certificado de garantia vitalícia do metal.", "Garantia"));
-            faqRepository.save(new FaqItem("Qual é o prazo de entrega?", "O prazo varia de acordo com o seu CEP e a modalidade escolhida no momento do checkout.", "Envio"));
+            faqRepository.save(new FaqItem("Quais são as formas de pagamento?", "Aceitamos Pix, Cartão de Crédito em até 6x e Boleto Bancário."));
+            faqRepository.save(new FaqItem("As peças possuem garantia?", "Sim! Todas as nossas joias em Prata 925 acompanham certificado de garantia vitalícia do metal."));
+            faqRepository.save(new FaqItem("Qual é o prazo de entrega?", "O prazo varia de acordo com o seu CEP e a modalidade escolhida no momento do checkout."));
         }
         return faqRepository.findAll();
     }
@@ -38,7 +38,6 @@ public class FaqController {
         FaqItem existing = faqRepository.findById(id).orElseThrow();
         existing.setQuestion(item.getQuestion());
         existing.setAnswer(item.getAnswer());
-        existing.setCategory(item.getCategory());
         return faqRepository.save(existing);
     }
 
