@@ -195,7 +195,42 @@ function MeuPedidoPage() {
                 </CardContent>
               </Card>
 
-              {/* Detalhes do Pedido e Endereço */}
+              {/* Resumo dos Itens Adquiridos no Pedido */}
+              {foundOrder.items && foundOrder.items.length > 0 && (
+                <Card className="border-border">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                      <Package className="h-4 w-4 text-primary" /> Itens do Pedido ({foundOrder.items.reduce((acc, item) => acc + item.quantity, 0)} {foundOrder.items.reduce((acc, item) => acc + item.quantity, 0) === 1 ? "item" : "itens"})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {foundOrder.items.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between gap-4 p-3.5 rounded-xl border border-border/60 bg-secondary/20 hover:bg-secondary/40 transition-colors">
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          {item.image ? (
+                            <img src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded-lg bg-muted shrink-0 border border-border/40" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center shrink-0 border border-border/40">
+                              <Package className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm text-foreground truncate">{item.name}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Quantidade: <strong className="text-foreground font-semibold">{item.quantity}</strong>
+                            </p>
+                          </div>
+                        </div>
+                        <span className="font-semibold text-sm tabular-nums text-foreground shrink-0">
+                          {formatBRL(item.price * item.quantity)}
+                        </span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Detalhes de Endereço e Pagamento */}
               <div className="grid sm:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader className="pb-3">
