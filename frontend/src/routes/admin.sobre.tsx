@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAboutSettings, aboutApi, type AboutSettings } from "@/lib/aboutStore";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,7 @@ function AdminAboutPage() {
   const live = useAboutSettings();
   const [form, setForm] = useState<AboutSettings>(live);
   const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setForm(live);
@@ -26,14 +27,14 @@ function AdminAboutPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error("Imagem muito grande (máximo 10MB).");
+      if (file.size > 15 * 1024 * 1024) {
+        toast.error("Imagem muito grande (máximo 15MB).");
         return;
       }
       const reader = new FileReader();
       reader.onloadend = () => {
         setForm((prev) => ({ ...prev, imageUrl: reader.result as string }));
-        toast.success("Imagem carregada!");
+        toast.success("Imagem selecionada do computador com sucesso!");
       };
       reader.readAsDataURL(file);
     }
@@ -44,9 +45,9 @@ function AdminAboutPage() {
     setSaving(true);
     try {
       await aboutApi.save(form);
-      toast.success("Página 'Sobre Nós' atualizada com sucesso!");
+      toast.success("Página 'Sobre Nós' atualizada com sucesso no banco!");
     } catch {
-      toast.error("Erro ao salvar alterações.");
+      toast.error("Erro ao salvar alterações no banco.");
     } finally {
       setSaving(false);
     }
@@ -98,7 +99,7 @@ function AdminAboutPage() {
           </CardContent>
         </Card>
 
-        {/* Imagem Principal */}
+        {/* Imagem Principal do Computador */}
         <Card className="border-border">
           <CardHeader>
             <CardTitle className="text-xl font-display flex items-center gap-2">
@@ -107,23 +108,27 @@ function AdminAboutPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {form.imageUrl && (
-              <div className="relative aspect-[16/9] max-w-md rounded-xl overflow-hidden border border-border bg-secondary/30">
-                <img src={form.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+              <div className="relative aspect-[16/9] max-w-md rounded-xl overflow-hidden border border-border bg-secondary/30 shadow-sm">
+                <img src={form.imageUrl} alt="Preview da foto do Sobre Nós" className="w-full h-full object-cover" />
               </div>
             )}
-            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-              <Input
-                value={form.imageUrl}
-                onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                placeholder="URL da imagem (https://...)"
-                className="h-11 flex-1"
+
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
               />
-              <label className="cursor-pointer">
-                <Button type="button" variant="outline" className="h-11 gap-2 rounded-lg pointer-events-none">
-                  <Upload className="h-4 w-4" /> Enviar foto do computador
-                </Button>
-                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-              </label>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="h-12 px-6 gap-2 rounded-xl border-foreground/30 hover:bg-secondary font-medium"
+              >
+                <Upload className="h-4 w-4 text-primary" /> Selecionar foto do computador
+              </Button>
             </div>
           </CardContent>
         </Card>
