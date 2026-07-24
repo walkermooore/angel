@@ -1,5 +1,7 @@
 package com.angel.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,6 +26,10 @@ public class AuditLog {
 
     private String orderNumber;
     private String action;
+
+    @Column(name = "user_name")
+    @JsonProperty("user")
+    @JsonAlias({"user", "user_name", "username"})
     private String user;
 
     @Column(columnDefinition = "TEXT")

@@ -123,8 +123,7 @@ function createStore<T>(key: string, initial: () => T) {
 export const productStore = createStore<Product[]>(PRODUCTS_KEY, loadProducts);
 export const orderStore = createStore<Order[]>(ORDERS_KEY, loadOrders);
 
-// Background sync with Spring Boot backend
-if (typeof window !== "undefined") {
+export function refreshProductsFromBackend() {
   getProductsFromBackend().then((remoteProds) => {
     if (remoteProds && Array.isArray(remoteProds) && remoteProds.length > 0) {
       const mapped = remoteProds.map((p: any) => ({
@@ -132,10 +131,12 @@ if (typeof window !== "undefined") {
         name: p.name,
         category: p.category || "prata",
         price: Number(p.price || 0),
-        originalPrice: p.originalPrice ? Number(p.originalPrice) : undefined,
+        discountPercent: Number(p.discountPercent || 0),
+        discountPrice: p.discountPrice ? Number(p.discountPrice) : Number(p.price || 0),
+        originalPrice: p.price ? Number(p.price) : undefined,
         rating: p.rating ? Number(p.rating) : 5.0,
         reviewsCount: p.reviewsCount ? Number(p.reviewsCount) : 0,
-        image: p.image || seedProducts[0].image,
+        image: p.image || p.imageUrl || seedProducts[0]?.image || "",
         description: p.description || "",
         details: p.details || [],
         inStock: p.inStock !== false,
@@ -143,7 +144,9 @@ if (typeof window !== "undefined") {
       productStore.set(mapped);
     }
   });
+}
 
+export function refreshOrdersFromBackend() {
   getOrdersFromBackend().then((remoteOrders) => {
     if (remoteOrders && Array.isArray(remoteOrders) && remoteOrders.length > 0) {
       const mapped: Order[] = remoteOrders.map((o: any) => ({
@@ -179,6 +182,12 @@ if (typeof window !== "undefined") {
   });
 }
 
+// Initial background sync with Spring Boot backend
+if (typeof window !== "undefined") {
+  refreshProductsFromBackend();
+  refreshOrdersFromBackend();
+}
+
 export function useProducts(): Product[] {
   return useSyncExternalStore(productStore.subscribe, productStore.get, () => seedProducts);
 }
@@ -189,20 +198,25 @@ export function useOrders(): Order[] {
 
 export const productsApi = {
   all: () => productStore.get(),
-  add: (p: Omit<Product, "id"> & { id?: string }) => {
+  add: async (p: Omit<Product, "id"> & { id?: string }) => {
     const id = p.id ?? crypto.randomUUID();
     const newProd = { ...p, id };
     productStore.set([newProd, ...productStore.get()]);
-    createProductInBackend(newProd);
+    await createProductInBackend(newProd);
+    refreshProductsFromBackend();
   },
-  update: (id: string, patch: Partial<Product>) => {
+  update: async (id: string, patch: Partial<Product>) => {
     productStore.set(productStore.get().map((p) => (p.id === id ? { ...p, ...patch } : p)));
     const updated = productStore.get().find((p) => p.id === id);
-    if (updated) updateProductInBackend(id, updated);
+    if (updated) {
+      await updateProductInBackend(id, updated);
+      refreshProductsFromBackend();
+    }
   },
-  remove: (id: string) => {
+  remove: async (id: string) => {
     productStore.set(productStore.get().filter((p) => p.id !== id));
-    deleteProductFromBackend(id);
+    await deleteProductFromBackend(id);
+    refreshProductsFromBackend();
   },
 };
 
@@ -220,8 +234,10 @@ export const ordersApi = {
     };
     orderStore.set([order, ...orderStore.get()]);
 
-    // Async sync to backend Spring Boot DB
-    createOrderInBackend(order);
+    // Async sync to backend Spring Boot DB and refresh
+    createOrderInBackend(order).then(() => {
+      refreshOrdersFromBackend();
+    });
 
     // Record audit log
     auditApi.log(
@@ -236,7 +252,9 @@ export const ordersApi = {
   updateStatus: (id: string, status: OrderStatus) => {
     const current = orderStore.get().find((o) => o.id === id);
     orderStore.set(orderStore.get().map((o) => (o.id === id ? { ...o, status } : o)));
-    updateOrderStatusInBackend(id, status);
+    updateOrderStatusInBackend(id, status).then(() => {
+      refreshOrdersFromBackend();
+    });
 
     if (current) {
       auditApi.log(
