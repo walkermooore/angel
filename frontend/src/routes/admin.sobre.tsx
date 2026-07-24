@@ -53,7 +53,7 @@ function AdminAboutPage() {
   };
 
   return (
-    <div className="p-6 sm:p-10 w-full max-w-5xl space-y-8">
+    <div className="p-6 sm:p-10 w-full space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-3xl sm:text-4xl">Editar "Sobre Nós"</h1>
