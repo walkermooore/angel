@@ -1,8 +1,10 @@
 package com.angel.backend.config;
 
+import com.angel.backend.model.AboutSettings;
 import com.angel.backend.model.AdminUser;
 import com.angel.backend.model.CategoryEntity;
 import com.angel.backend.model.Product;
+import com.angel.backend.repository.AboutSettingsRepository;
 import com.angel.backend.repository.AdminUserRepository;
 import com.angel.backend.repository.CategoryRepository;
 import com.angel.backend.repository.ProductRepository;
@@ -18,11 +20,13 @@ public class DataInitializer implements CommandLineRunner {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final AdminUserRepository adminUserRepository;
+    private final AboutSettingsRepository aboutSettingsRepository;
 
-    public DataInitializer(ProductRepository productRepository, CategoryRepository categoryRepository, AdminUserRepository adminUserRepository) {
+    public DataInitializer(ProductRepository productRepository, CategoryRepository categoryRepository, AdminUserRepository adminUserRepository, AboutSettingsRepository aboutSettingsRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.adminUserRepository = adminUserRepository;
+        this.aboutSettingsRepository = aboutSettingsRepository;
     }
 
     @Override
@@ -36,6 +40,11 @@ public class DataInitializer implements CommandLineRunner {
         if (categoryRepository.count() == 0) {
             categoryRepository.save(new CategoryEntity("prata"));
             categoryRepository.save(new CategoryEntity("cosmeticos"));
+        }
+
+        // Seed About Settings
+        if (aboutSettingsRepository.count() == 0) {
+            aboutSettingsRepository.save(new AboutSettings());
         }
 
         // Seed Products in PostgreSQL database automatically

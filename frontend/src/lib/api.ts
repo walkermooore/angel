@@ -65,3 +65,8 @@ export const deleteFaqFromBackend = (id: string) => apiFetch(`/faq/${id}`, { met
 // Home Settings
 export const getHomeSettingsFromBackend = () => apiFetch<any>("/home-settings");
 export const saveHomeSettingsToBackend = (settings: any) => apiFetch("/home-settings", { method: "PUT", body: JSON.stringify(settings) });
+
+// Sobre Nós Settings
+export const getAboutSettingsFromBackend = () => apiFetch<any>("/sobre-nos");
+export const saveAboutSettingsToBackend = (settings: any) => apiFetch("/sobre-nos", { method: "PUT", body: JSON.stringify(settings) });
+

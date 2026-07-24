@@ -1,12 +1,12 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Home, Package, Receipt, Tags, History, HelpCircle, LogOut, Sun, Moon, Menu, X, ExternalLink } from "lucide-react";
+import { LayoutDashboard, Home, Package, Receipt, Tags, History, HelpCircle, LogOut, Sun, Moon, Menu, X, ExternalLink, Info } from "lucide-react";
 import { useState } from "react";
 import { adminAuth } from "@/lib/admin-auth";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const items: Array<{
-  to: "/admin" | "/admin/home" | "/admin/produtos" | "/admin/categorias" | "/admin/pedidos" | "/admin/auditoria" | "/admin/faq";
+  to: "/admin" | "/admin/home" | "/admin/produtos" | "/admin/categorias" | "/admin/pedidos" | "/admin/sobre" | "/admin/faq" | "/admin/auditoria";
   label: string;
   icon: typeof LayoutDashboard;
   exact?: boolean;
@@ -16,6 +16,7 @@ const items: Array<{
   { to: "/admin/produtos", label: "Produtos", icon: Package },
   { to: "/admin/categorias", label: "Categorias", icon: Tags },
   { to: "/admin/pedidos", label: "Pedidos", icon: Receipt },
+  { to: "/admin/sobre", label: "Sobre Nós", icon: Info },
   { to: "/admin/faq", label: "FAQ / Dúvidas", icon: HelpCircle },
   { to: "/admin/auditoria", label: "Auditoria", icon: History },
 ];
@@ -90,6 +91,7 @@ export function AdminSidebar() {
         />
       )}
 
+      {/* Sidebar Drawer */}
       <aside
         className={cn(
           "w-64 shrink-0 border-r border-border/60 bg-secondary/30 h-screen sticky top-0 flex flex-col justify-between z-50 transition-transform duration-200",
