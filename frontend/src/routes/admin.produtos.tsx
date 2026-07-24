@@ -256,6 +256,7 @@ function AdminProducts() {
                   step="0.01"
                   min="0"
                   value={draft.price || ""}
+                  onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
                   onChange={(e) => handlePriceOrDiscountChange(parseFloat(e.target.value) || 0, draft.discountPercent || 0)}
                   placeholder="0,00"
                   className="h-11 mt-1.5"
@@ -283,7 +284,7 @@ function AdminProducts() {
                   <Input
                     type="number"
                     min="0"
-                    max="100"
+                    onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
                     value={draft.discountPercent || ""}
                     onChange={(e) => handlePriceOrDiscountChange(draft.price, parseInt(e.target.value) || 0)}
                     placeholder="0"

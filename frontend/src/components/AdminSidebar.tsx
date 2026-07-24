@@ -90,10 +90,9 @@ export function AdminSidebar() {
         />
       )}
 
-      {/* Sidebar Drawer (Desktop Fixed Sidebar + Mobile Slide-Over) */}
       <aside
         className={cn(
-          "w-64 shrink-0 border-r border-border/60 bg-secondary/30 min-h-screen sticky top-0 flex flex-col z-50 transition-transform duration-200",
+          "w-64 shrink-0 border-r border-border/60 bg-secondary/30 h-screen sticky top-0 flex flex-col justify-between z-50 transition-transform duration-200",
           "lg:translate-x-0 fixed lg:sticky top-0 bottom-0 left-0 bg-background lg:bg-secondary/30",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
