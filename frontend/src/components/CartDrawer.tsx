@@ -67,11 +67,6 @@ export function CartDrawer() {
   };
 
   const handleCheckout = () => {
-    const cleanPhone = phone.replace(/\D/g, "");
-    if (cleanPhone.length < 10) {
-      toast.error("Informe um número de telefone válido (com DDD).");
-      return;
-    }
     if (shippingOption === "entrega" && !cepValid) {
       toast.error("Informe um CEP válido para entrega no endereço.");
       return;
@@ -244,16 +239,7 @@ export function CartDrawer() {
                 </div>
               )}
 
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-muted-foreground">Telefone para contato</label>
-                <Input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="(65) 99999-9999"
-                  className="h-10 rounded-full"
-                />
-              </div>
+
 
               <div className="flex items-baseline justify-between">
                 <span className="text-sm text-muted-foreground">Subtotal</span>

@@ -264,7 +264,7 @@ function MeuPedidoPage() {
                     </p>
                     <p className="text-muted-foreground font-mono text-xs">CEP: {foundOrder.address.cep}</p>
                     <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5 pt-2 border-t border-border/60">
-                      <Phone className="h-3.5 w-3.5" /> Contato: {foundOrder.email}
+                      <Phone className="h-3.5 w-3.5" /> Contato da Loja: [contato removido]
                     </p>
                   </CardContent>
                 </Card>

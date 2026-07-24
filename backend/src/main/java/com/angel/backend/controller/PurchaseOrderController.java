@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -25,6 +26,15 @@ public class PurchaseOrderController {
         this.auditLogRepository = auditLogRepository;
     }
 
+    private Optional<PurchaseOrder> findByIdOrNumber(String idOrNumber) {
+        try {
+            UUID id = UUID.fromString(idOrNumber);
+            Optional<PurchaseOrder> byId = purchaseOrderRepository.findById(id);
+            if (byId.isPresent()) return byId;
+        } catch (Exception ignored) {}
+        return purchaseOrderRepository.findByNumber(idOrNumber);
+    }
+
     @GetMapping
     public List<PurchaseOrder> listarPedidos() {
         return purchaseOrderRepository.findAllByOrderByCreatedAtDesc();
@@ -32,18 +42,9 @@ public class PurchaseOrderController {
 
     @GetMapping("/{idOrNumber}")
     public ResponseEntity<PurchaseOrder> buscarPedido(@PathVariable String idOrNumber) {
-        try {
-            UUID id = UUID.fromString(idOrNumber);
-            return purchaseOrderRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> purchaseOrderRepository.findByNumber(idOrNumber)
-                    .map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.notFound().build()));
-        } catch (IllegalArgumentException e) {
-            return purchaseOrderRepository.findByNumber(idOrNumber)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-        }
+        return findByIdOrNumber(idOrNumber)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
@@ -75,9 +76,9 @@ public class PurchaseOrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<PurchaseOrder> atualizarStatus(@PathVariable UUID id, @RequestBody Map<String, String> body) {
-        return purchaseOrderRepository.findById(id).map(order -> {
+    @PatchMapping("/{idOrNumber}/status")
+    public ResponseEntity<PurchaseOrder> atualizarStatus(@PathVariable String idOrNumber, @RequestBody Map<String, String> body) {
+        return findByIdOrNumber(idOrNumber).map(order -> {
             String newStatusStr = body.get("status");
             if (newStatusStr != null) {
                 Status oldStatus = order.getStatus();
@@ -98,9 +99,9 @@ public class PurchaseOrderController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    @PatchMapping("/{id}/tracking-code")
-    public ResponseEntity<PurchaseOrder> atualizarRastreio(@PathVariable UUID id, @RequestBody Map<String, String> body) {
-        return purchaseOrderRepository.findById(id).map(order -> {
+    @PatchMapping("/{idOrNumber}/tracking-code")
+    public ResponseEntity<PurchaseOrder> atualizarRastreio(@PathVariable String idOrNumber, @RequestBody Map<String, String> body) {
+        return findByIdOrNumber(idOrNumber).map(order -> {
             String code = body.get("trackingCode");
             order.setTrackingCode(code);
             purchaseOrderRepository.save(order);
@@ -121,7 +122,8 @@ public class PurchaseOrderController {
         if (str == null) return Status.PENDENTE;
         switch (str.toLowerCase()) {
             case "pago": return Status.PAGO;
-            case "enviado": return Status.ENVIADO;
+            case "enviado":
+            case "pronto para retirada": return Status.ENVIADO;
             case "concluído":
             case "concluido": return Status.CONCLUIDO;
             case "cancelado": return Status.CANCELADO;

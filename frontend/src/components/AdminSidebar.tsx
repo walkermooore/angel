@@ -8,7 +8,8 @@ import {
   History,
   HelpCircle,
   LogOut,
-  Sun,Moon,
+  Sun,
+  Moon,
   Menu,
   X,
   ExternalLink,
@@ -17,6 +18,7 @@ import {
   ChevronDown,
   ChevronRight,
   ShoppingBag,
+  Activity,
 } from "lucide-react";
 import { useState } from "react";
 import { adminAuth } from "@/lib/admin-auth";
@@ -40,46 +42,15 @@ interface NavItem {
   exact?: boolean;
 }
 
-interface NavGroup {
-  title: string;
-  icon?: typeof Sliders;
-  collapsible?: boolean;
-  items: NavItem[];
-}
-
-const navGroups: NavGroup[] = [
-  {
-    title: "Visão Geral",
-    items: [
-      { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-      { to: "/admin/auditoria", label: "Auditoria", icon: History },
-    ],
-  },
-  {
-    title: "Vendas & Gestão",
-    items: [
-      { to: "/admin/pedidos", label: "Pedidos", icon: Receipt },
-      { to: "/admin/produtos", label: "Produtos", icon: Package },
-      { to: "/admin/categorias", label: "Categorias", icon: Tags },
-    ],
-  },
-  {
-    title: "Configurações de Tela",
-    icon: Sliders,
-    collapsible: true,
-    items: [
-      { to: "/admin/home", label: "Página Home", icon: Home },
-      { to: "/admin/sobre", label: "Sobre Nós", icon: Info },
-      { to: "/admin/faq", label: "FAQ / Dúvidas", icon: HelpCircle },
-    ],
-  },
-];
-
 export function AdminSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const { isDark, toggleTheme, mounted } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // States for collapsible groups
+  const [overviewOpen, setOverviewOpen] = useState(true);
+  const [salesOpen, setSalesOpen] = useState(true);
   const [screenSettingsOpen, setScreenSettingsOpen] = useState(true);
 
   const handleLogout = () => {
@@ -169,84 +140,154 @@ export function AdminSidebar() {
           </button>
         </div>
 
-        {/* Grouped Navigation */}
-        <nav className="flex-1 p-3 space-y-6 overflow-y-auto">
-          {navGroups.map((group) => {
-            if (group.collapsible) {
-              const isGroupActive = group.items.some((item) => pathname.startsWith(item.to));
-              return (
-                <div key={group.title} className="space-y-1">
-                  <button
-                    onClick={() => setScreenSettingsOpen(!screenSettingsOpen)}
-                    className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <span className="flex items-center gap-2">
-                      {group.icon && <group.icon className="h-3.5 w-3.5 text-primary" />}
-                      {group.title}
-                    </span>
-                    {screenSettingsOpen ? (
-                      <ChevronDown className="h-3.5 w-3.5" />
-                    ) : (
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    )}
-                  </button>
-
-                  {screenSettingsOpen && (
-                    <div className="space-y-1 pl-2 border-l border-border/60 ml-2 mt-1">
-                      {group.items.map(({ to, label, icon: Icon, exact }) => {
-                        const active = exact ? pathname === to : pathname.startsWith(to);
-                        return (
-                          <Link
-                            key={to}
-                            to={to}
-                            onClick={() => setMobileOpen(false)}
-                            className={cn(
-                              "flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs transition-all",
-                              active
-                                ? "bg-foreground text-background font-semibold shadow-sm"
-                                : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
-                            )}
-                          >
-                            <Icon className="h-3.5 w-3.5 shrink-0" />
-                            {label}
-                          </Link>
-                        );
-                      })}
-                    </div>
+        {/* Grouped Collapsible Navigation */}
+        <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
+          {/* Grupo 1: Visão Geral */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setOverviewOpen(!overviewOpen)}
+              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <Activity className="h-3.5 w-3.5 text-primary" /> Visão Geral
+              </span>
+              {overviewOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+            </button>
+            {overviewOpen && (
+              <div className="space-y-1 pl-2 border-l border-border/60 ml-2 mt-1">
+                <Link
+                  to="/admin"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs transition-all",
+                    pathname === "/admin"
+                      ? "bg-foreground text-background font-semibold shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
                   )}
-                </div>
-              );
-            }
-
-            return (
-              <div key={group.title} className="space-y-1">
-                <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  {group.title}
-                </p>
-                <div className="space-y-1 mt-1">
-                  {group.items.map(({ to, label, icon: Icon, exact }) => {
-                    const active = exact ? pathname === to : pathname.startsWith(to);
-                    return (
-                      <Link
-                        key={to}
-                        to={to}
-                        onClick={() => setMobileOpen(false)}
-                        className={cn(
-                          "flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition-all",
-                          active
-                            ? "bg-foreground text-background font-semibold shadow-sm"
-                            : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
-                        )}
-                      >
-                        <Icon className="h-4 w-4 shrink-0" />
-                        {label}
-                      </Link>
-                    );
-                  })}
-                </div>
+                >
+                  <LayoutDashboard className="h-3.5 w-3.5 shrink-0" /> Dashboard
+                </Link>
+                <Link
+                  to="/admin/auditoria"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs transition-all",
+                    pathname.startsWith("/admin/auditoria")
+                      ? "bg-foreground text-background font-semibold shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                  )}
+                >
+                  <History className="h-3.5 w-3.5 shrink-0" /> Auditoria
+                </Link>
               </div>
-            );
-          })}
+            )}
+          </div>
+
+          {/* Grupo 2: Vendas & Gestão */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setSalesOpen(!salesOpen)}
+              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <ShoppingBag className="h-3.5 w-3.5 text-primary" /> Vendas & Gestão
+              </span>
+              {salesOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+            </button>
+            {salesOpen && (
+              <div className="space-y-1 pl-2 border-l border-border/60 ml-2 mt-1">
+                <Link
+                  to="/admin/pedidos"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs transition-all",
+                    pathname.startsWith("/admin/pedidos")
+                      ? "bg-foreground text-background font-semibold shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                  )}
+                >
+                  <Receipt className="h-3.5 w-3.5 shrink-0" /> Pedidos
+                </Link>
+                <Link
+                  to="/admin/produtos"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs transition-all",
+                    pathname.startsWith("/admin/produtos")
+                      ? "bg-foreground text-background font-semibold shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                  )}
+                >
+                  <Package className="h-3.5 w-3.5 shrink-0" /> Produtos
+                </Link>
+                <Link
+                  to="/admin/categorias"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs transition-all",
+                    pathname.startsWith("/admin/categorias")
+                      ? "bg-foreground text-background font-semibold shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                  )}
+                >
+                  <Tags className="h-3.5 w-3.5 shrink-0" /> Categorias
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Grupo 3: Configurações de Tela */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setScreenSettingsOpen(!screenSettingsOpen)}
+              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <Sliders className="h-3.5 w-3.5 text-primary" /> Configurações de Tela
+              </span>
+              {screenSettingsOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+            </button>
+            {screenSettingsOpen && (
+              <div className="space-y-1 pl-2 border-l border-border/60 ml-2 mt-1">
+                <Link
+                  to="/admin/home"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs transition-all",
+                    pathname.startsWith("/admin/home")
+                      ? "bg-foreground text-background font-semibold shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                  )}
+                >
+                  <Home className="h-3.5 w-3.5 shrink-0" /> Página Home
+                </Link>
+                <Link
+                  to="/admin/sobre"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs transition-all",
+                    pathname.startsWith("/admin/sobre")
+                      ? "bg-foreground text-background font-semibold shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                  )}
+                >
+                  <Info className="h-3.5 w-3.5 shrink-0" /> Sobre Nós
+                </Link>
+                <Link
+                  to="/admin/faq"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs transition-all",
+                    pathname.startsWith("/admin/faq")
+                      ? "bg-foreground text-background font-semibold shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                  )}
+                >
+                  <HelpCircle className="h-3.5 w-3.5 shrink-0" /> FAQ / Dúvidas
+                </Link>
+              </div>
+            )}
+          </div>
         </nav>
 
         {/* Footer Actions in Sidebar */}

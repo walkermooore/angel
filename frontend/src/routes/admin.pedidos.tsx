@@ -207,7 +207,7 @@ export function AdminOrders() {
                   </h4>
 
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <div className={editStatus === "Enviado" ? "sm:col-span-1" : "sm:col-span-2"}>
+                    <div className={editStatus === "Enviado" && selected?.shippingOption !== "retirada" ? "sm:col-span-1" : "sm:col-span-2"}>
                       <Label className="text-xs uppercase tracking-widest text-muted-foreground mb-1.5 block">
                         Status do Pedido
                       </Label>
@@ -225,8 +225,8 @@ export function AdminOrders() {
                       </Select>
                     </div>
 
-                    {/* Exibe o campo de Código de Rastreio APENAS se o status for 'Enviado' */}
-                    {editStatus === "Enviado" && (
+                    {/* Exibe o campo de Código de Rastreio APENAS se o status for 'Enviado' E o pedido for entrega */}
+                    {editStatus === "Enviado" && selected?.shippingOption !== "retirada" && (
                       <div>
                         <Label className="text-xs uppercase tracking-widest text-muted-foreground mb-1.5 block flex items-center gap-1.5">
                           <Truck className="h-3.5 w-3.5" /> Código de Rastreio (Correios)
