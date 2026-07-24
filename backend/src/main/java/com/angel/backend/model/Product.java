@@ -19,6 +19,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Table(name = "product")
 public class Product {
 
     @Id
@@ -34,8 +35,10 @@ public class Product {
     @Column(nullable = false)
     private BigDecimal price;
 
-    private Integer discountPercent;
+    @Column(name = "discount_percent")
+    private Integer discountPercent = 0;
 
+    @Column(name = "discount_price")
     private BigDecimal discountPrice;
 
     @Column(nullable = false)

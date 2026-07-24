@@ -1,7 +1,9 @@
 package com.angel.backend.config;
 
+import com.angel.backend.model.AdminUser;
 import com.angel.backend.model.CategoryEntity;
 import com.angel.backend.model.Product;
+import com.angel.backend.repository.AdminUserRepository;
 import com.angel.backend.repository.CategoryRepository;
 import com.angel.backend.repository.ProductRepository;
 import org.springframework.boot.CommandLineRunner;
@@ -15,14 +17,21 @@ public class DataInitializer implements CommandLineRunner {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final AdminUserRepository adminUserRepository;
 
-    public DataInitializer(ProductRepository productRepository, CategoryRepository categoryRepository) {
+    public DataInitializer(ProductRepository productRepository, CategoryRepository categoryRepository, AdminUserRepository adminUserRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
+        this.adminUserRepository = adminUserRepository;
     }
 
     @Override
     public void run(String... args) throws Exception {
+        // Seed Admin Account
+        if (adminUserRepository.count() == 0) {
+            adminUserRepository.save(new AdminUser("Administradora Angel", "admin@example.invalid", "admin123"));
+        }
+
         // Seed Categories
         if (categoryRepository.count() == 0) {
             categoryRepository.save(new CategoryEntity("prata"));
