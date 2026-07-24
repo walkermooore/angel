@@ -1,7 +1,7 @@
 package com.angel.backend.model;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @Embeddable
 public class OrderItem {
 
@@ -20,8 +21,5 @@ public class OrderItem {
 
     private BigDecimal price;
 
-    Integer quantity;
-
-    @Column(name = "image", columnDefinition = "TEXT")
-    private String image;
+    private Integer quantity;
 }

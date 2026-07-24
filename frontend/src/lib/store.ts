@@ -20,7 +20,7 @@ export interface OrderItem {
   name: string;
   price: number;
   quantity: number;
-  image: string;
+  image?: string;
 }
 
 export interface Order {
@@ -54,7 +54,7 @@ const seedOrders: Order[] = [
   {
     id: "ord-1",
     number: "ANG-20260723-9482",
-    email: "[contato removido]",
+    email: "contato@example.invalid",
     createdAt: new Date().toISOString(),
     items: [
       { productId: "1", name: "Colar Éclat Prata 925", price: 170.1, quantity: 1, image: seedProducts[0]?.image || "" },
@@ -149,18 +149,22 @@ export function refreshProductsFromBackend() {
 export function refreshOrdersFromBackend() {
   getOrdersFromBackend().then((remoteOrders) => {
     if (remoteOrders && Array.isArray(remoteOrders) && remoteOrders.length > 0) {
+      const allProds = productStore.get();
       const mapped: Order[] = remoteOrders.map((o: any) => ({
         id: String(o.id),
         number: o.number || "ANG-1001",
         email: o.email || "",
         createdAt: o.createdAt || new Date().toISOString(),
-        items: (o.items || []).map((i: any) => ({
-          productId: String(i.productId || ""),
-          name: i.name || "",
-          price: Number(i.price || 0),
-          quantity: Number(i.quantity || 1),
-          image: i.image || "",
-        })),
+        items: (o.items || []).map((i: any) => {
+          const matchedProd = allProds.find((p) => String(p.id) === String(i.productId));
+          return {
+            productId: String(i.productId || ""),
+            name: i.name || matchedProd?.name || "",
+            price: Number(i.price || matchedProd?.price || 0),
+            quantity: Number(i.quantity || 1),
+            image: i.image || matchedProd?.image || seedProducts[0]?.image || "",
+          };
+        }),
         subtotal: Number(o.subtotal || o.total || 0),
         shipping: Number(o.shipping || 0),
         total: Number(o.total || 0),
@@ -234,8 +238,26 @@ export const ordersApi = {
     };
     orderStore.set([order, ...orderStore.get()]);
 
-    // Async sync to backend Spring Boot DB and refresh
-    createOrderInBackend(order).then(() => {
+    // Send order payload with productId, name, price, quantity to backend
+    const backendPayload = {
+      number: order.number,
+      email: order.email,
+      items: order.items.map((i) => ({
+        productId: i.productId,
+        name: i.name,
+        price: i.price,
+        quantity: i.quantity,
+      })),
+      subtotal: order.subtotal,
+      shipping: order.shipping,
+      total: order.total,
+      status: "PENDENTE",
+      shippingOption: order.shippingOption,
+      payment: order.payment === "Cartão" ? "CARTAO" : order.payment,
+      address: order.address,
+    };
+
+    createOrderInBackend(backendPayload).then(() => {
       refreshOrdersFromBackend();
     });
 

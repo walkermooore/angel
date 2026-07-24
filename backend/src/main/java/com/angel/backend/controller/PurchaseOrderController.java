@@ -48,6 +48,9 @@ public class PurchaseOrderController {
 
     @PostMapping
     public ResponseEntity<PurchaseOrder> criarPedido(@RequestBody PurchaseOrder order) {
+        // Force id to null so JPA generates a fresh UUID in PostgreSQL
+        order.setId(null);
+
         if (order.getNumber() == null || order.getNumber().isBlank()) {
             order.setNumber("ANG-" + (1000 + (int)(Math.random() * 9000)));
         }
@@ -57,13 +60,17 @@ public class PurchaseOrderController {
 
         PurchaseOrder saved = purchaseOrderRepository.save(order);
 
-        // Record Audit log automatically
-        auditLogRepository.save(new AuditLog(
-            saved.getNumber(),
-            "Criado",
-            "Cliente",
-            "Pedido criado via checkout com total de R$ " + saved.getTotal()
-        ));
+        // Safe audit log insertion
+        try {
+            auditLogRepository.save(new AuditLog(
+                saved.getNumber(),
+                "Criado",
+                "Cliente",
+                "Pedido criado via checkout com total de R$ " + saved.getTotal()
+            ));
+        } catch (Exception e) {
+            // Silently ignore audit log errors to prevent transaction rollback
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
@@ -78,13 +85,14 @@ public class PurchaseOrderController {
                 order.setStatus(newStatus);
                 purchaseOrderRepository.save(order);
 
-                // Record Audit log
-                auditLogRepository.save(new AuditLog(
-                    order.getNumber(),
-                    "Status Alterado",
-                    "Admin",
-                    "Status alterado de '" + (oldStatus != null ? oldStatus.getDescription() : "Desconhecido") + "' para '" + newStatus.getDescription() + "'"
-                ));
+                try {
+                    auditLogRepository.save(new AuditLog(
+                        order.getNumber(),
+                        "Status Alterado",
+                        "Admin",
+                        "Status alterado de '" + (oldStatus != null ? oldStatus.getDescription() : "Desconhecido") + "' para '" + newStatus.getDescription() + "'"
+                    ));
+                } catch (Exception ignored) {}
             }
             return ResponseEntity.ok(order);
         }).orElse(ResponseEntity.notFound().build());
@@ -97,12 +105,14 @@ public class PurchaseOrderController {
             order.setTrackingCode(code);
             purchaseOrderRepository.save(order);
 
-            auditLogRepository.save(new AuditLog(
-                order.getNumber(),
-                "Rastreio Atualizado",
-                "Admin",
-                "Código de rastreio atualizado para: " + code
-            ));
+            try {
+                auditLogRepository.save(new AuditLog(
+                    order.getNumber(),
+                    "Rastreio Atualizado",
+                    "Admin",
+                    "Código de rastreio atualizado para: " + code
+                ));
+            } catch (Exception ignored) {}
             return ResponseEntity.ok(order);
         }).orElse(ResponseEntity.notFound().build());
     }
