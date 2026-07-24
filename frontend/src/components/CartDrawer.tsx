@@ -2,7 +2,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCart, formatBRL } from "@/lib/cart";
-import { Minus, Plus, Trash2, ShoppingBag, Store, Truck, Calculator, Check } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, Store, Truck, Calculator, Check, MapPin } from "lucide-react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,8 +34,9 @@ export function CartDrawer() {
   const [quotes, setQuotes] = useState<ShippingQuote[]>([]);
   const [selectedQuoteId, setSelectedQuoteId] = useState<string>("");
   const [calculating, setCalculating] = useState(false);
+  const [cityInfo, setCityInfo] = useState<string>("");
 
-  // Melhor Envio Freight calculation
+  // Melhor Envio Freight calculation with ViaCEP City display
   const handleCalculateFreight = async () => {
     if (!cepValid) {
       toast.error("Informe um CEP válido com 8 dígitos.");
@@ -43,16 +44,23 @@ export function CartDrawer() {
     }
     setCalculating(true);
     try {
+      let locationStr = "";
+      const viaCepRes = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`).then((r) => r.json()).catch(() => null);
+      if (viaCepRes && !viaCepRes.erro) {
+        locationStr = `${viaCepRes.localidade} - ${viaCepRes.uf}`;
+        setCityInfo(locationStr);
+      }
+
       const res = await calculateMelhorEnvioFreight({ toCep: cleanCep, subtotal });
       setQuotes(res);
       if (res.length > 0) {
         setSelectedQuoteId(res[0].id);
-        toast.success(`Cotação realizada via Melhor Envio! (${res.length} opções encontradas)`);
+        toast.success(`Frete calculado para ${locationStr || "o seu endereço"}!`);
       } else {
         toast.error("Não foi possível obter cotações para este CEP.");
       }
     } catch {
-      toast.error("Erro ao consultar a API do Melhor Envio.");
+      toast.error("Erro ao consultar a API de fretes.");
     } finally {
       setCalculating(false);
     }
@@ -187,6 +195,12 @@ export function CartDrawer() {
                       <Calculator className="h-3.5 w-3.5" /> {calculating ? "Cotando..." : "Calcular Frete"}
                     </Button>
                   </div>
+
+                  {cityInfo && (
+                    <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20">
+                      <MapPin className="h-3.5 w-3.5 shrink-0" /> Frete calculado para <strong>{cityInfo}</strong>
+                    </p>
+                  )}
 
                   {/* Lista de Opções do Melhor Envio */}
                   {quotes.length > 0 && (
