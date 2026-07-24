@@ -27,7 +27,6 @@ function AdminLogin() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (adminAuth.login(email, password)) {
-      toast.success("Bem-vinda de volta!");
       navigate({ to: "/admin" });
     } else {
       toast.error("Credenciais inválidas. Use a conta de demonstração.");

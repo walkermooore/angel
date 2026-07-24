@@ -1,5 +1,7 @@
 package com.angel.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,7 +28,7 @@ public class Product {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(nullable = false)
@@ -40,6 +42,8 @@ public class Product {
     private String category;
 
     @Column(name = "image_url", columnDefinition = "TEXT")
+    @JsonProperty("image")
+    @JsonAlias({"imageUrl", "image"})
     private String imageUrl;
 
     private Boolean highlighted = false;

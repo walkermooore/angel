@@ -18,7 +18,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
     >
       <Sonner
         className="toaster group"
-        position="bottom-left"
+        position="top-center"
         closeButton={false} // Disable dual default button
         duration={4000}
         toastOptions={{
