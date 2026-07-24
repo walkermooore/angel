@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Home, Package, Receipt, Tags, History, HelpCircle, LogOut, Sun, Moon, Menu, X } from "lucide-react";
+import { LayoutDashboard, Home, Package, Receipt, Tags, History, HelpCircle, LogOut, Sun, Moon, Menu, X, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { adminAuth } from "@/lib/admin-auth";
 import { useTheme } from "@/lib/theme";
@@ -31,6 +31,10 @@ export function AdminSidebar() {
     navigate({ to: "/admin/login" });
   };
 
+  const goToHome = () => {
+    navigate({ to: "/" });
+  };
+
   return (
     <>
       {/* Mobile Top Header */}
@@ -57,6 +61,15 @@ export function AdminSidebar() {
             title={isDark ? "Modo Claro" : "Modo Noturno"}
           >
             {mounted && isDark ? <Sun className="h-5 w-5 text-amber-400" /> : <Moon className="h-5 w-5" />}
+          </button>
+
+          {/* Go to Home */}
+          <button
+            onClick={goToHome}
+            className="p-2 rounded-lg border border-border hover:bg-secondary text-foreground transition-colors"
+            title="Sair para tela inicial"
+          >
+            <ExternalLink className="h-4 w-4" />
           </button>
 
           {/* Mobile Logout Button */}
@@ -132,6 +145,13 @@ export function AdminSidebar() {
               {mounted && isDark ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4" />}
               {mounted && isDark ? "Modo Claro" : "Modo Noturno"}
             </span>
+          </button>
+
+          <button
+            onClick={goToHome}
+            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium border border-border/60 text-foreground hover:bg-secondary transition-colors"
+          >
+            <ExternalLink className="h-4 w-4 shrink-0 text-primary" /> Sair para tela inicial
           </button>
 
           <button

@@ -135,14 +135,12 @@ function CheckoutPage() {
       `${envText}\n\n` +
       `🛒 *Itens:*\n${itemsList}`;
 
-    const waUrl = `}`;
-
     clear();
     toast.success("Pedido realizado com sucesso!", { description: `Código: ${order.number}` });
 
     navigate({
       to: "/pedido-concluido",
-      search: { n: order.number, wa: waUrl },
+      search: { n: order.number },
     });
   };
 
