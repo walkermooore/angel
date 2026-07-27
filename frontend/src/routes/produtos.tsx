@@ -12,10 +12,10 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/produtos")({
   head: () => ({
     meta: [
-      { title: "Produtos — Angel" },
-      { name: "description", content: "Explore joias de prata 925 e cosméticos selecionados pela Angel." },
-      { property: "og:title", content: "Produtos — Angel" },
-      { property: "og:description", content: "Explore joias de prata e cosméticos da Angel." },
+      { title: "Produtos — Angell" },
+      { name: "description", content: "Explore joias de prata 925 e cosméticos selecionados pela Angell." },
+      { property: "og:title", content: "Produtos — Angell" },
+      { property: "og:description", content: "Explore joias de prata e cosméticos da Angell." },
     ],
   }),
   component: ProdutosPage,

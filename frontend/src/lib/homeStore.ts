@@ -21,7 +21,7 @@ const HOME_KEY = "angel:home_settings";
 const defaultSettings: HomeSettings = {
   heroTitle: "Sofisticação em cada detalhe.",
   heroDescription:
-    "Peças em prata 925 e cosméticos selecionados para quem entende que beleza está no essencial. Bem-vinda à Angel.",
+    "Peças em prata 925 e cosméticos selecionados para quem entende que beleza está no essencial. Bem-vinda à Angell.",
   heroImage: heroImg,
   values: [
     { id: "v-1", title: "Prata 925", subtitle: "Certificada" },

@@ -4,10 +4,10 @@ import { useAboutSettings } from "@/lib/aboutStore";
 export const Route = createFileRoute("/sobre")({
   head: () => ({
     meta: [
-      { title: "Sobre Nós — Angel" },
-      { name: "description", content: "Conheça a história da Angel: joias em prata 925 e cosméticos com sofisticação minimalista." },
-      { property: "og:title", content: "Sobre Nós — Angel" },
-      { property: "og:description", content: "A história por trás da Angel." },
+      { title: "Sobre Nós — Angell" },
+      { name: "description", content: "Conheça a história da Angell: joias em prata 925 e cosméticos com sofisticação minimalista." },
+      { property: "og:title", content: "Sobre Nós — Angell" },
+      { property: "og:description", content: "A história por trás da Angell." },
     ],
   }),
   component: SobrePage,
@@ -27,7 +27,7 @@ function SobrePage() {
 
       <div className="grid md:grid-cols-2 gap-12 md:gap-16 mt-16 items-start">
         <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-secondary/40 order-2 md:order-1 border border-border/60">
-          <img src={about.imageUrl} alt="Sobre a Angel" className="w-full h-full object-cover" width={1200} height={900} loading="lazy" />
+          <img src={about.imageUrl} alt="Sobre a Angell" className="w-full h-full object-cover" width={1200} height={900} loading="lazy" />
         </div>
         <div className="order-1 md:order-2 space-y-5 text-muted-foreground leading-relaxed">
           <p>{about.paragraph1}</p>

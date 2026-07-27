@@ -55,7 +55,7 @@ export function ProductDetailDialog({
                 <Check className="h-4 w-4 text-muted-foreground" /> Garantia de 30 dias
               </li>
               <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-muted-foreground" /> Embalagem presente Angel
+                <Check className="h-4 w-4 text-muted-foreground" /> Embalagem presente Angell
               </li>
             </ul>
             <Button

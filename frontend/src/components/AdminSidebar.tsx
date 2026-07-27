@@ -77,7 +77,7 @@ export function AdminSidebar() {
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
           <div>
-            <p className="font-display text-xl font-bold">Angel</p>
+            <p className="font-display text-xl font-bold">Angell</p>
             <p className="text-[9px] uppercase tracking-widest text-muted-foreground">Admin</p>
           </div>
         </div>
@@ -129,7 +129,7 @@ export function AdminSidebar() {
       >
         <div className="px-6 py-6 border-b border-border/60 flex items-center justify-between">
           <div>
-            <p className="font-display text-2xl font-bold text-foreground">Angel</p>
+            <p className="font-display text-2xl font-bold text-foreground">Angell</p>
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Painel Admin</p>
           </div>
           {/* Desktop Dark Mode Icon in Header */}

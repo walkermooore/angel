@@ -17,6 +17,7 @@ import { CartDrawer } from "@/components/CartDrawer";
 import { Footer } from "@/components/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import { WhatsAppFloat } from "@/components/WhatsAppFloat";
+import { SITE_URL } from "@/lib/seo";
 
 function NotFoundComponent() {
   return (
@@ -80,10 +81,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Angel — Joias de Prata & Cosméticos" },
-      { name: "description", content: "Angel: joias em prata e cosméticos selecionados. Sofisticação minimalista para o seu dia a dia." },
-      { name: "author", content: "Angel" },
-      { property: "og:title", content: "Angel — Joias de Prata & Cosméticos" },
+      { title: "Angell — Joias de Prata & Cosméticos" },
+      { name: "description", content: "Angell: joias em prata e cosméticos selecionados. Sofisticação minimalista para o seu dia a dia." },
+      { name: "author", content: "Angell" },
+      { property: "og:title", content: "Angell — Joias de Prata & Cosméticos" },
       { property: "og:description", content: "Sofisticação minimalista em joias de prata e cosméticos." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -106,12 +107,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  const organization = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Angell",
+    url: SITE_URL,
+    logo: `${SITE_URL}/favicon.svg`,
+  };
+  const website = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Angell",
+    url: SITE_URL,
+    inLanguage: "pt-BR",
+  };
   return (
     <html lang="pt-BR">
       <head>
         <HeadContent />
       </head>
       <body>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organization) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(website) }} />
         {children}
         <Scripts />
       </body>
@@ -123,9 +140,12 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdmin = pathname.startsWith("/admin");
+  const canonical = `${SITE_URL}${pathname === "/" ? "" : pathname}`;
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <>
+      {!isAdmin && <link rel="canonical" href={canonical} />}
+      <QueryClientProvider client={queryClient}>
       <CartProvider>
         {isAdmin ? (
           <Outlet />
@@ -142,6 +162,7 @@ function RootComponent() {
         )}
         <Toaster />
       </CartProvider>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </>
   );
 }

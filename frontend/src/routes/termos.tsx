@@ -3,7 +3,7 @@ import { InstitutionalContent } from "@/components/InstitutionalContent";
 import { useInstitutionalSettings } from "@/lib/institutionalStore";
 
 export const Route = createFileRoute("/termos")({
-  head: () => ({ meta: [{ title: "Termos de Uso — Angel" }] }),
+  head: () => ({ meta: [{ title: "Termos de Uso — Angell" }] }),
   component: TermosPage,
 });
 

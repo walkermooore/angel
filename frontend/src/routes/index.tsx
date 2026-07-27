@@ -35,7 +35,7 @@ function Index() {
                 <Link to="/produtos">VER PRODUTOS</Link>
               </Button>
               <Button asChild variant="outline" className="h-12 px-8 rounded-full uppercase tracking-widest text-xs">
-                <Link to="/sobre">Sobre a Angel</Link>
+                <Link to="/sobre">Sobre a Angell</Link>
               </Button>
             </div>
           </div>
@@ -46,7 +46,7 @@ function Index() {
             ) : (
               <img
                 src={settings.heroImage}
-                alt="Coleção Angel"
+                alt="Coleção Angell"
                 className="w-full h-full object-cover animate-fade-in"
                 loading="eager"
               />

@@ -3,7 +3,7 @@ import { InstitutionalContent } from "@/components/InstitutionalContent";
 import { useInstitutionalSettings } from "@/lib/institutionalStore";
 
 export const Route = createFileRoute("/trocas")({
-  head: () => ({ meta: [{ title: "Trocas e Devoluções — Angel" }] }),
+  head: () => ({ meta: [{ title: "Trocas e Devoluções — Angell" }] }),
   component: TrocasPage,
 });
 

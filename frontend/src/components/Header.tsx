@@ -25,7 +25,7 @@ export function Header() {
     <header className="fixed top-0 inset-x-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/60">
       <div className="mx-auto max-w-7xl px-5 sm:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
         <Link to="/" className="font-display text-3xl sm:text-4xl tracking-wide text-foreground">
-          Angel
+          Angell
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">

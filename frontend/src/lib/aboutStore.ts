@@ -20,7 +20,7 @@ const defaultAboutSettings: AboutSettings = {
   subtitle: "Nossa história",
   title: "Beleza é fazer do essencial algo memorável.",
   imageUrl: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800&auto=format&fit=crop",
-  paragraph1: "A Angel nasceu em 2019 do desejo de criar peças que atravessassem o tempo — joias em prata 925 e cosméticos pensados para o cuidado diário, sem excessos.",
+  paragraph1: "A Angell nasceu em 2019 do desejo de criar peças que atravessassem o tempo — joias em prata 925 e cosméticos pensados para o cuidado diário, sem excessos.",
   paragraph2: "Cada colar, anel ou frasco é escolhido a dedo. Trabalhamos com ateliês independentes no Brasil e na Europa, garantindo materiais certificados, acabamentos impecáveis e uma produção consciente.",
   paragraph3: "Acreditamos que sofisticação não é sobre acumular, é sobre escolher bem. É por isso que nossa coleção é curta, curada e feita para durar.",
   stat1Number: "2019",

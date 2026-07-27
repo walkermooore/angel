@@ -3,7 +3,7 @@ import { InstitutionalContent } from "@/components/InstitutionalContent";
 import { useInstitutionalSettings } from "@/lib/institutionalStore";
 
 export const Route = createFileRoute("/privacidade")({
-  head: () => ({ meta: [{ title: "Política de Privacidade — Angel" }] }),
+  head: () => ({ meta: [{ title: "Política de Privacidade — Angell" }] }),
   component: PrivacidadePage,
 });
 

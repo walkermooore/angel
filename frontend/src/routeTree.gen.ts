@@ -17,10 +17,12 @@ import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as PedidoConcluidoRouteImport } from './routes/pedido-concluido'
 import { Route as MeuPedidoRouteImport } from './routes/meu-pedido'
 import { Route as FaqRouteImport } from './routes/faq'
+import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as ProdutosSlugRouteImport } from './routes/produtos.$slug'
 import { Route as AdminSobreRouteImport } from './routes/admin.sobre'
 import { Route as AdminProdutosRouteImport } from './routes/admin.produtos'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
@@ -71,6 +73,11 @@ const FaqRoute = FaqRouteImport.update({
   path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CheckoutRoute = CheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
@@ -90,6 +97,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const ProdutosSlugRoute = ProdutosSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ProdutosRoute,
 } as any)
 const AdminSobreRoute = AdminSobreRouteImport.update({
   id: '/sobre',
@@ -141,11 +153,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/checkout': typeof CheckoutRoute
+  '/cookies': typeof CookiesRoute
   '/faq': typeof FaqRoute
   '/meu-pedido': typeof MeuPedidoRoute
   '/pedido-concluido': typeof PedidoConcluidoRoute
   '/privacidade': typeof PrivacidadeRoute
-  '/produtos': typeof ProdutosRoute
+  '/produtos': typeof ProdutosRouteWithChildren
   '/sobre': typeof SobreRoute
   '/termos': typeof TermosRoute
   '/trocas': typeof TrocasRoute
@@ -158,16 +171,18 @@ export interface FileRoutesByFullPath {
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
   '/admin/sobre': typeof AdminSobreRoute
+  '/produtos/$slug': typeof ProdutosSlugRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/checkout': typeof CheckoutRoute
+  '/cookies': typeof CookiesRoute
   '/faq': typeof FaqRoute
   '/meu-pedido': typeof MeuPedidoRoute
   '/pedido-concluido': typeof PedidoConcluidoRoute
   '/privacidade': typeof PrivacidadeRoute
-  '/produtos': typeof ProdutosRoute
+  '/produtos': typeof ProdutosRouteWithChildren
   '/sobre': typeof SobreRoute
   '/termos': typeof TermosRoute
   '/trocas': typeof TrocasRoute
@@ -180,6 +195,7 @@ export interface FileRoutesByTo {
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
   '/admin/sobre': typeof AdminSobreRoute
+  '/produtos/$slug': typeof ProdutosSlugRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
@@ -187,11 +203,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/checkout': typeof CheckoutRoute
+  '/cookies': typeof CookiesRoute
   '/faq': typeof FaqRoute
   '/meu-pedido': typeof MeuPedidoRoute
   '/pedido-concluido': typeof PedidoConcluidoRoute
   '/privacidade': typeof PrivacidadeRoute
-  '/produtos': typeof ProdutosRoute
+  '/produtos': typeof ProdutosRouteWithChildren
   '/sobre': typeof SobreRoute
   '/termos': typeof TermosRoute
   '/trocas': typeof TrocasRoute
@@ -204,6 +221,7 @@ export interface FileRoutesById {
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
   '/admin/sobre': typeof AdminSobreRoute
+  '/produtos/$slug': typeof ProdutosSlugRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -212,6 +230,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/checkout'
+    | '/cookies'
     | '/faq'
     | '/meu-pedido'
     | '/pedido-concluido'
@@ -229,11 +248,13 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/produtos'
     | '/admin/sobre'
+    | '/produtos/$slug'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/checkout'
+    | '/cookies'
     | '/faq'
     | '/meu-pedido'
     | '/pedido-concluido'
@@ -251,12 +272,14 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/produtos'
     | '/admin/sobre'
+    | '/produtos/$slug'
     | '/admin'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/checkout'
+    | '/cookies'
     | '/faq'
     | '/meu-pedido'
     | '/pedido-concluido'
@@ -274,6 +297,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/produtos'
     | '/admin/sobre'
+    | '/produtos/$slug'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -281,11 +305,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   CheckoutRoute: typeof CheckoutRoute
+  CookiesRoute: typeof CookiesRoute
   FaqRoute: typeof FaqRoute
   MeuPedidoRoute: typeof MeuPedidoRoute
   PedidoConcluidoRoute: typeof PedidoConcluidoRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
-  ProdutosRoute: typeof ProdutosRoute
+  ProdutosRoute: typeof ProdutosRouteWithChildren
   SobreRoute: typeof SobreRoute
   TermosRoute: typeof TermosRoute
   TrocasRoute: typeof TrocasRoute
@@ -349,6 +374,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/checkout': {
       id: '/checkout'
       path: '/checkout'
@@ -376,6 +408,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/produtos/$slug': {
+      id: '/produtos/$slug'
+      path: '/$slug'
+      fullPath: '/produtos/$slug'
+      preLoaderRoute: typeof ProdutosSlugRouteImport
+      parentRoute: typeof ProdutosRoute
     }
     '/admin/sobre': {
       id: '/admin/sobre'
@@ -471,15 +510,28 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface ProdutosRouteChildren {
+  ProdutosSlugRoute: typeof ProdutosSlugRoute
+}
+
+const ProdutosRouteChildren: ProdutosRouteChildren = {
+  ProdutosSlugRoute: ProdutosSlugRoute,
+}
+
+const ProdutosRouteWithChildren = ProdutosRoute._addFileChildren(
+  ProdutosRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   CheckoutRoute: CheckoutRoute,
+  CookiesRoute: CookiesRoute,
   FaqRoute: FaqRoute,
   MeuPedidoRoute: MeuPedidoRoute,
   PedidoConcluidoRoute: PedidoConcluidoRoute,
   PrivacidadeRoute: PrivacidadeRoute,
-  ProdutosRoute: ProdutosRoute,
+  ProdutosRoute: ProdutosRouteWithChildren,
   SobreRoute: SobreRoute,
   TermosRoute: TermosRoute,
   TrocasRoute: TrocasRoute,

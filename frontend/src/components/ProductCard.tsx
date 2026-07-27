@@ -1,13 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { useCart, formatBRL } from "@/lib/cart";
 import type { Product } from "@/lib/products";
-import { useState } from "react";
-import { ProductDetailDialog } from "./ProductDetailDialog";
+import { Link } from "@tanstack/react-router";
+import { productSlug } from "@/lib/seo";
 
 export function ProductCard({ product }: { product: Product }) {
   const { add } = useCart();
-  const [open, setOpen] = useState(false);
-
   const effectivePrice = product.discountPrice ?? product.price;
   const hasDiscount = Boolean(product.discountPercent && product.discountPercent > 0);
 
@@ -19,8 +17,9 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <div className="group flex flex-col h-full min-w-0">
       {/* Image container as div */}
-      <div
-        onClick={() => setOpen(true)}
+      <Link
+        to="/produtos/$slug"
+        params={{ slug: productSlug(product) }}
         className="relative overflow-hidden rounded-lg bg-secondary/40 aspect-square w-full shrink-0 text-left cursor-pointer"
         style={{ aspectRatio: "1 / 1" }}
       >
@@ -45,12 +44,13 @@ export function ProductCard({ product }: { product: Product }) {
             Adicionar
           </Button>
         </div>
-      </div>
+      </Link>
 
       <div className="mt-4 flex flex-col flex-1 justify-between gap-1">
         <div>
-          <div
-            onClick={() => setOpen(true)}
+          <Link
+            to="/produtos/$slug"
+            params={{ slug: productSlug(product) }}
             className="flex items-baseline justify-between gap-2 text-left w-full cursor-pointer"
           >
             <h3 className="text-sm font-medium leading-tight line-clamp-2 hover:underline">{product.name}</h3>
@@ -60,7 +60,7 @@ export function ProductCard({ product }: { product: Product }) {
               )}
               <span className="text-sm text-foreground font-semibold">{formatBRL(effectivePrice)}</span>
             </div>
-          </div>
+          </Link>
           <p className="text-xs text-muted-foreground mt-1 capitalize">
             {product.category === "prata" ? "Prata 925" : product.category}
           </p>
@@ -73,7 +73,6 @@ export function ProductCard({ product }: { product: Product }) {
           Adicionar ao carrinho
         </Button>
       </div>
-      <ProductDetailDialog product={{ ...product, price: effectivePrice }} open={open} onOpenChange={setOpen} />
     </div>
   );
 }

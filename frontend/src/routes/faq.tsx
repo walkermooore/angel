@@ -4,7 +4,7 @@ import { useFaqs } from "@/lib/faqStore";
 import { HelpCircle } from "lucide-react";
 
 export const Route = createFileRoute("/faq")({
-  head: () => ({ meta: [{ title: "Perguntas Frequentes (FAQ) — Angel" }] }),
+  head: () => ({ meta: [{ title: "Perguntas Frequentes (FAQ) — Angell" }] }),
   component: FaqPage,
 });
 
@@ -19,7 +19,7 @@ function FaqPage() {
         </p>
         <h1 className="font-display text-4xl sm:text-5xl">Perguntas Frequentes</h1>
         <p className="text-xs uppercase tracking-widest text-muted-foreground mt-2">
-          Respostas para as dúvidas mais comuns sobre a Angel
+          Respostas para as dúvidas mais comuns sobre a Angell
         </p>
       </div>
 
