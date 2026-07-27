@@ -3,6 +3,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useProducts } from "@/lib/store";
 import { useCategories } from "@/lib/categories";
 import { ProductCard } from "@/components/ProductCard";
+import { isProductAvailable } from "@/lib/products";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,7 @@ function ProdutosPage() {
 
   const filtered = useMemo(() => {
     const list = products.filter((p) => {
+      if (!isProductAvailable(p)) return false;
       const catOk = filterCat === "todos" || p.category.toLowerCase() === filterCat.toLowerCase();
 
       const effectivePrice = p.discountPrice ?? p.price;

@@ -1,4 +1,4 @@
-import { type Product } from "./products";
+import { isProductAvailable, type Product } from "./products";
 import { useProducts } from "./store";
 import { useHomeSettings, homeApi } from "./homeStore";
 
@@ -11,7 +11,7 @@ export function useHighlights(): Product[] {
 
   ids.forEach((id) => {
     const found = allProducts.find((p) => p.id === id);
-    if (found) result.push(found);
+    if (found && isProductAvailable(found)) result.push(found);
   });
 
   return result;

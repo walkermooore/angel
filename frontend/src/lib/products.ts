@@ -25,6 +25,12 @@ export interface Product {
   inStock?: boolean;
 }
 
+export function isProductAvailable(product: Product): boolean {
+  const stock = Number(product.stockQuantity ?? 0);
+  const reserved = Number(product.reservedQuantity ?? 0);
+  return product.inStock !== false && stock - reserved > 0;
+}
+
 export const products: Product[] = [
   { id: "1", name: "Colar Éclat Prata 925", price: 189, discountPercent: 10, discountPrice: 170.1, category: "prata", image: p1, description: "Colar minimalista em prata 925 com pingente delicado.", stockQuantity: 100, inStock: true },
   { id: "2", name: "Argolas Lumière", price: 149, category: "prata", image: p2, description: "Argolas leves em prata polida, essenciais para o dia a dia.", stockQuantity: 100, inStock: true },

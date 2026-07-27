@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useCart, formatBRL } from "@/lib/cart";
-import { products as seedProducts, type Product } from "@/lib/products";
+import { isProductAvailable, products as seedProducts, type Product } from "@/lib/products";
 import { getProductFromBackend, getProductsFromBackend } from "@/lib/api";
 import { productSlug, productUrl, SITE_URL } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
@@ -66,7 +66,7 @@ function ProductPage() {
   const product = Route.useLoaderData();
   const { add } = useCart();
   const price = product.discountPrice ?? product.price;
-  const available = product.inStock !== false && (product.stockQuantity ?? 0) > (product.reservedQuantity ?? 0);
+  const available = isProductAvailable(product);
   useEffect(() => trackFunnel("PRODUCT_VIEWED", product.category), [product.category]);
   const jsonLd = {
     "@context": "https://schema.org",

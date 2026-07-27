@@ -5,9 +5,11 @@ import { useProducts } from "@/lib/store";
 import { Link } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import { formatBRL } from "@/lib/cart";
+import { isProductAvailable } from "@/lib/products";
+import { productSlug } from "@/lib/seo";
 
 export function SearchDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
-  const products = useProducts();
+  const products = useProducts().filter(isProductAvailable);
   const [q, setQ] = useState("");
   const results = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -35,7 +37,8 @@ export function SearchDialog({ open, onOpenChange }: { open: boolean; onOpenChan
           {results.map((p) => (
             <li key={p.id}>
               <Link
-                to="/produtos"
+                to="/produtos/$slug"
+                params={{ slug: productSlug(p) }}
                 onClick={() => onOpenChange(false)}
                 className="flex items-center gap-4 px-5 py-3 hover:bg-secondary/60 transition-colors"
               >
