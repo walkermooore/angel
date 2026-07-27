@@ -48,6 +48,7 @@ public class SecurityConfig {
                     "/api/produtos", "/api/categorias", "/api/destaques", "/api/faq",
                     "/api/home-settings", "/api/sobre-nos", "/api/paginas-institucionais"
                 ).permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/produtos/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/frete/oauth/callback").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().hasAuthority("SCOPE_ADMIN")

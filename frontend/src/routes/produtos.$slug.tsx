@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useCart, formatBRL } from "@/lib/cart";
 import { products as seedProducts, type Product } from "@/lib/products";
-import { getProductsFromBackend } from "@/lib/api";
+import { getProductFromBackend, getProductsFromBackend } from "@/lib/api";
 import { productSlug, productUrl, SITE_URL } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Truck } from "lucide-react";
@@ -26,9 +26,16 @@ function mapProduct(value: any): Product {
 
 export const Route = createFileRoute("/produtos/$slug")({
   loader: async ({ params }) => {
+    const separator = params.slug.lastIndexOf("--");
+    const productId = separator >= 0 ? params.slug.slice(separator + 2) : "";
+    const remoteProduct = productId ? await getProductFromBackend(productId) : null;
+    if (remoteProduct) return mapProduct(remoteProduct);
+
     const remote = await getProductsFromBackend();
     const products = remote?.length ? remote.map(mapProduct) : seedProducts;
-    const product = products.find((item) => productSlug(item) === params.slug);
+    const product = products.find((item) =>
+      String(item.id) === productId || productSlug(item) === params.slug
+    );
     if (!product) throw notFound();
     return product;
   },

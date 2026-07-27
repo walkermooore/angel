@@ -51,6 +51,7 @@ async function apiMutation<T>(endpoint: string, options: RequestInit): Promise<T
 
 // Products
 export const getProductsFromBackend = () => apiFetch<any[]>("/produtos");
+export const getProductFromBackend = (id: string) => apiFetch<any>(`/produtos/${encodeURIComponent(id)}`);
 export const createProductInBackend = (data: any) => apiFetch("/produtos", { method: "POST", body: JSON.stringify(data) });
 export const updateProductInBackend = (id: string, data: any) => apiFetch(`/produtos/${id}`, { method: "PUT", body: JSON.stringify(data) });
 export const deleteProductFromBackend = (id: string) => apiFetch(`/produtos/${id}`, { method: "DELETE" });

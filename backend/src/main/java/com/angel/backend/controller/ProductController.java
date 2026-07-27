@@ -33,6 +33,12 @@ public class ProductController {
         return productRepository.findAll();
     }
 
+    @GetMapping("/{id}")
+    public Product buscarProduto(@PathVariable UUID id) {
+        return productRepository.findById(id)
+            .orElseThrow(() -> new CheckoutException(HttpStatus.NOT_FOUND, "Produto não encontrado."));
+    }
+
     @PostMapping
     public Product criarProduto(@RequestBody Product produto) {
         if (produto.getCategory() == null || produto.getCategory().isBlank()) {
