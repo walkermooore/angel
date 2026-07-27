@@ -3,8 +3,8 @@ export const API_BASE = configuredApiUrl.replace(/\/+$/, "");
 
 function authorizationHeader(): Record<string, string> {
   if (typeof window === "undefined") return {};
-  const token = localStorage.getItem("angel:admin_token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const csrfToken = localStorage.getItem("angel:csrf_token");
+  return csrfToken ? { "X-CSRF-Token": csrfToken } : {};
 }
 
 // Helper fetch wrapper
@@ -12,6 +12,7 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T |
   try {
     const res = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
         ...authorizationHeader(),
@@ -31,6 +32,7 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T |
 async function apiMutation<T>(endpoint: string, options: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...authorizationHeader(),
@@ -39,7 +41,8 @@ async function apiMutation<T>(endpoint: string, options: RequestInit): Promise<T
   });
 
   if (!res.ok) {
-    throw new Error(`A API respondeu com o status ${res.status}.`);
+    const body = await res.json().catch(() => null) as { message?: string } | null;
+    throw new Error(body?.message || `A API respondeu com o status ${res.status}.`);
   }
 
   if (res.status === 204) return true as T;
@@ -63,23 +66,37 @@ export const saveHighlightsToBackend = (ids: string[]) => apiFetch("/destaques",
 
 // Admin Auth
 export const loginAdminBackend = (email: string, pass: string) =>
-  apiFetch<{ success: boolean; token?: string }>("/auth/login", {
+  apiFetch<{ success: boolean; csrfToken?: string }>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password: pass }),
   });
+export const logoutAdminBackend = () =>
+  apiMutation<{ success: boolean }>("/auth/logout", { method: "POST" });
 
 // Orders
 export const getOrdersFromBackend = () => apiFetch<any[]>("/pedidos");
-export const createOrderInBackend = (orderData: any) => apiFetch("/pedidos", { method: "POST", body: JSON.stringify(orderData) });
+export const createOrderInBackend = (orderData: any, idempotencyKey: string) =>
+  apiMutation<any>("/pedidos", {
+    method: "POST",
+    headers: { "Idempotency-Key": idempotencyKey },
+    body: JSON.stringify(orderData),
+  });
 export const getOrderFromBackend = (idOrNumber: string) => apiFetch<any>(`/pedidos/${idOrNumber}`);
+export const trackOrderFromBackend = (number: string, contact: string, trackingToken?: string) =>
+  apiMutation<any>("/pedidos/acompanhar", {
+    method: "POST",
+    body: JSON.stringify({ number, contact, trackingToken }),
+  });
 export const updateOrderStatusInBackend = (id: string, status: string) =>
   apiMutation<any>(`/pedidos/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
 export const updateOrderTrackingInBackend = (id: string, trackingCode: string) =>
   apiMutation<any>(`/pedidos/${id}/tracking-code`, { method: "PATCH", body: JSON.stringify({ trackingCode }) });
+export const getMelhorEnvioAuthorizationUrl = () =>
+  apiMutation<{ url: string }>("/frete/oauth/authorization-url", { method: "GET" });
 
 // Audit Logs
 export const getAuditLogsFromBackend = () => apiFetch<any[]>("/auditoria");
-export const createAuditLogBackend = (orderNumber: string, action: string, user: string, details: String) =>
+export const createAuditLogBackend = (orderNumber: string, action: string, user: string, details: string) =>
   apiFetch("/auditoria", { method: "POST", body: JSON.stringify({ orderNumber, action, user, details }) });
 
 // FAQs

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { getMelhorEnvioAuthorizationUrl } from "@/lib/api";
 import {
   institutionalDefaults,
   refreshInstitutionalSettings,
@@ -25,7 +26,7 @@ type Settings = {
 };
 
 const defaults: Settings = {
-  storeName: "Angel",
+  storeName: "Angell",
   supportEmail: "contato@example.invalid",
   supportWhatsapp: "(00) 00000-0000",
 };
@@ -34,6 +35,7 @@ function AdminConfiguracoes() {
   const [settings, setSettings] = useState<Settings>(defaults);
   const [pages, setPages] = useState<InstitutionalSettings>(institutionalDefaults);
   const [saving, setSaving] = useState(false);
+  const [authorizingShipping, setAuthorizingShipping] = useState(false);
 
   useEffect(() => {
     try {
@@ -69,11 +71,31 @@ function AdminConfiguracoes() {
     }
   };
 
+  const authorizeMelhorEnvio = async () => {
+    setAuthorizingShipping(true);
+    try {
+      const { url } = await getMelhorEnvioAuthorizationUrl();
+      window.location.assign(url);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível iniciar a autorização.");
+      setAuthorizingShipping(false);
+    }
+  };
+
   return (
     <div className="w-full p-6 sm:p-10">
       <h1 className="font-display text-3xl sm:text-4xl mb-8">Configurações</h1>
 
-      <form onSubmit={save} className="max-w-2xl space-y-5">
+      <form onSubmit={save} className="w-full space-y-5">
+        <div className="rounded-xl border border-border p-5 space-y-3">
+          <h2 className="font-display text-2xl">Melhor Envio</h2>
+          <p className="text-sm text-muted-foreground">
+            Autorize a loja para calcular fretes. O token será renovado automaticamente.
+          </p>
+          <Button type="button" variant="outline" disabled={authorizingShipping} onClick={authorizeMelhorEnvio}>
+            {authorizingShipping ? "Redirecionando..." : "Autorizar Melhor Envio"}
+          </Button>
+        </div>
         <div>
           <Label className="text-xs uppercase tracking-widest">Nome da loja</Label>
           <Input

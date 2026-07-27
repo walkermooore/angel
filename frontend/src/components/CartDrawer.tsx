@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { calculateMelhorEnvioFreight, type ShippingQuote } from "@/lib/melhorenvio";
+import { trackFunnel } from "@/lib/funnel";
 
 export function CartDrawer() {
   const {
@@ -19,6 +20,7 @@ export function CartDrawer() {
     total,
     updateQty,
     remove,
+    add,
     cep,
     setCep,
     phone,
@@ -51,16 +53,20 @@ export function CartDrawer() {
         setCityInfo(locationStr);
       }
 
-      const res = await calculateMelhorEnvioFreight({ toCep: cleanCep, subtotal });
+      const res = await calculateMelhorEnvioFreight({
+        toCep: cleanCep,
+        items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
+      });
       setQuotes(res);
+      trackFunnel("FREIGHT_CALCULATED", res.length > 0 ? "success" : "empty");
       if (res.length > 0) {
         setSelectedQuoteId(res[0].id);
         toast.success(`Frete calculado para ${locationStr || "o seu endereço"}!`);
       } else {
         toast.error("Não foi possível obter cotações para este CEP.");
       }
-    } catch {
-      toast.error("Erro ao consultar a API de fretes.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao consultar a API de fretes.");
     } finally {
       setCalculating(false);
     }
@@ -72,12 +78,21 @@ export function CartDrawer() {
       return;
     }
     setOpen(false);
+    trackFunnel("CHECKOUT_STARTED", shippingOption);
     navigate({ to: "/checkout" });
   };
 
   const activeQuote = quotes.find((q) => q.id === selectedQuoteId);
   const effectiveShipping = shippingOption === "retirada" ? 0 : activeQuote ? activeQuote.price : shipping;
   const finalTotal = subtotal + effectiveShipping;
+  const freeShippingRemaining = Math.max(0, 250 - subtotal);
+
+  const removeWithUndo = (product: (typeof items)[number]["product"]) => {
+    remove(product.id);
+    toast("Produto removido da sacola.", {
+      action: { label: "Desfazer", onClick: () => add(product) },
+    });
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={setOpen}>
@@ -118,7 +133,7 @@ export function CartDrawer() {
                       <div className="flex justify-between gap-2">
                         <h3 className="text-sm font-medium leading-tight">{product.name}</h3>
                         <button
-                          onClick={() => remove(product.id)}
+                          onClick={() => removeWithUndo(product)}
                           aria-label="Remover"
                           className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
                         >
@@ -155,6 +170,11 @@ export function CartDrawer() {
             </div>
 
             <div className="border-t border-border/60 px-6 py-5 space-y-4 bg-secondary/30">
+              {shippingOption === "entrega" && freeShippingRemaining > 0 && (
+                <p className="text-xs text-center text-muted-foreground">
+                  Faltam <strong>{formatBRL(freeShippingRemaining)}</strong> para o frete grátis.
+                </p>
+              )}
               {/* Opção de Envio / Retirada na Loja */}
               <div className="space-y-2">
                 <label className="text-xs uppercase tracking-widest text-muted-foreground">Forma de Envio</label>

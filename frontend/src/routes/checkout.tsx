@@ -1,16 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCart, formatBRL } from "@/lib/cart";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ordersApi } from "@/lib/store";
+import { calculateMelhorEnvioFreight, type ShippingQuote } from "@/lib/melhorenvio";
 import { toast } from "sonner";
-import { QrCode, CreditCard, FileText, ShieldCheck, MapPin, Phone, Mail, Store, Truck } from "lucide-react";
+import { QrCode, CreditCard, FileText, ShieldCheck, MapPin, Mail, Store, Truck, Calculator, Check } from "lucide-react";
+import { trackFunnel } from "@/lib/funnel";
 
 export const Route = createFileRoute("/checkout")({
-  head: () => ({ meta: [{ title: "Checkout — Angel" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Checkout — Angell" }, { name: "robots", content: "noindex" }] }),
   component: CheckoutPage,
 });
 
@@ -43,9 +45,25 @@ function CheckoutPage() {
   });
   const [payment, setPayment] = useState<"PIX" | "Cartão" | "Boleto">("PIX");
   const [loadingCep, setLoadingCep] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [formError, setFormError] = useState("");
+  const reviewRef = useRef<HTMLDivElement>(null);
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const [quotes, setQuotes] = useState<ShippingQuote[]>([]);
+  const [selectedQuoteId, setSelectedQuoteId] = useState("");
+  const [calculatingFreight, setCalculatingFreight] = useState(false);
+  const selectedQuote = quotes.find((quote) => quote.id === selectedQuoteId);
+  const effectiveShipping = shippingOption === "retirada" ? 0 : selectedQuote?.price ?? 0;
 
   // When switching to Retirar na Loja, auto fill pickup address
   useEffect(() => {
+    trackFunnel("CHECKOUT_STARTED", "page");
+  }, []);
+
+  useEffect(() => {
+    trackFunnel("SHIPPING_SELECTED", shippingOption);
     if (shippingOption === "retirada") {
       setForm({
         street: "Retirada na loja física",
@@ -79,58 +97,114 @@ function CheckoutPage() {
             toast.success("Endereço preenchido automaticamente pelo CEP!");
           }
         })
-        .catch(() => {})
+        .catch(() => {
+          setFormError("Não foi possível consultar o CEP. Confira o número ou preencha o endereço manualmente.");
+        })
         .finally(() => setLoadingCep(false));
     }
   }, [cep, shippingOption]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    setQuotes([]);
+    setSelectedQuoteId("");
+  }, [cep, items, shippingOption]);
+
+  const handleCalculateFreight = async () => {
+    const cleanCep = cep.replace(/\D/g, "");
+    if (cleanCep.length !== 8) {
+      toast.error("Informe um CEP válido com 8 dígitos.");
+      return;
+    }
+    setCalculatingFreight(true);
+    try {
+      const result = await calculateMelhorEnvioFreight({
+        toCep: cleanCep,
+        items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
+      });
+      setQuotes(result);
+      trackFunnel("FREIGHT_CALCULATED", result.length > 0 ? "success" : "empty");
+      setSelectedQuoteId(result[0]?.id || "");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível calcular o frete.");
+    } finally {
+      setCalculatingFreight(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
     if (items.length === 0) {
-      toast.error("Sua sacola está vazia.");
+      trackFunnel("FORM_ERROR", "empty_cart");
+      setFormError("Sua sacola está vazia.");
+      return;
+    }
+    if (customerName.trim().length < 3) {
+      trackFunnel("FORM_ERROR", "customer_name");
+      setFormError("Informe seu nome completo.");
       return;
     }
     if (!customerEmail || !customerEmail.includes("@")) {
-      toast.error("Informe um e-mail válido.");
+      trackFunnel("FORM_ERROR", "email");
+      setFormError("Informe um e-mail válido.");
       return;
     }
     const cleanPhone = phone.replace(/\D/g, "");
     if (cleanPhone.length < 10) {
-      toast.error("Informe um telefone com DDD válido.");
+      trackFunnel("FORM_ERROR", "phone");
+      setFormError("Informe um telefone com DDD válido.");
       return;
     }
     if (shippingOption === "entrega" && (!form.street || !form.number || !form.neighborhood || !form.city || !form.state)) {
-      toast.error("Preencha o endereço de entrega completo.");
+      trackFunnel("FORM_ERROR", "address");
+      setFormError("Preencha o endereço de entrega completo.");
+      return;
+    }
+    if (shippingOption === "entrega" && !selectedQuoteId) {
+      trackFunnel("FORM_ERROR", "shipping");
+      setFormError("Calcule e selecione uma opção de frete.");
+      return;
+    }
+    if (!reviewing) {
+      setReviewing(true);
+      setTimeout(() => reviewRef.current?.focus(), 0);
+      return;
+    }
+    if (!acceptedTerms) {
+      trackFunnel("FORM_ERROR", "terms");
+      setFormError("Confirme que revisou o pedido e aceita as políticas aplicáveis.");
       return;
     }
 
-    const finalShipping = shippingOption === "retirada" ? 0 : shipping;
-    const finalTotal = subtotal + finalShipping;
+    setSubmitting(true);
+    try {
+      const order = await ordersApi.create({
+        customerName: customerName.trim(),
+        email: customerEmail.trim(),
+        phone: cleanPhone,
+        items: items.map((item) => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+        })),
+        shippingOption,
+        shippingQuoteId: shippingOption === "retirada" ? "PICKUP" : selectedQuoteId as `ME-${number}`,
+        payment: payment === "Cartão" ? "CARTAO" : payment === "Boleto" ? "BOLETO" : "PIX",
+        address: { cep, ...form },
+      }, idempotencyKey);
 
-    const order = ordersApi.create({
-      email: customerEmail.trim(),
-      items: items.map((i) => ({
-        productId: i.product.id,
-        name: i.product.name,
-        price: i.product.discountPrice ?? i.product.price,
-        quantity: i.quantity,
-        image: i.product.image,
-      })),
-      subtotal,
-      shipping: finalShipping,
-      total: finalTotal,
-      shippingOption,
-      payment,
-      address: { cep, ...form },
-    });
-
-    clear();
-    toast.success("Pedido realizado com sucesso!", { description: `Código: ${order.number}` });
-
-    navigate({
-      to: "/pedido-concluido",
-      search: { n: order.number },
-    });
+      clear();
+      toast.success("Pedido realizado com sucesso!", { description: `Código: ${order.number}` });
+      navigate({
+        to: "/pedido-concluido",
+        search: { n: order.number, t: order.publicTrackingToken || "" },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Não foi possível registrar o pedido.";
+      setFormError(`${message} Seus produtos continuam na sacola. Tente novamente.`);
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (items.length === 0) {
@@ -151,6 +225,38 @@ function CheckoutPage() {
 
       <form onSubmit={handleSubmit} className="grid lg:grid-cols-[1fr_380px] gap-10">
         <div className="space-y-10">
+          {formError && (
+            <div role="alert" aria-live="assertive" tabIndex={-1} className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+              {formError}
+            </div>
+          )}
+
+          {reviewing && (
+            <section ref={reviewRef} tabIndex={-1} aria-labelledby="review-title" className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-6 space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 id="review-title" className="font-display text-2xl">Revisão final do pedido</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Confira tudo antes de registrar o pedido. Você ainda pode corrigir os campos abaixo.</p>
+                </div>
+                <Button type="button" variant="outline" onClick={() => setReviewing(false)}>Editar</Button>
+              </div>
+              <dl className="grid sm:grid-cols-2 gap-3 text-sm">
+                <div><dt className="text-muted-foreground">Contato</dt><dd>{customerName} · {customerEmail} · {phone}</dd></div>
+                <div><dt className="text-muted-foreground">Entrega</dt><dd>{shippingOption === "retirada" ? "Retirada na loja" : `${form.street}, ${form.number} — ${form.city}/${form.state}`}</dd></div>
+                <div><dt className="text-muted-foreground">Pagamento</dt><dd>{payment}</dd></div>
+                <div><dt className="text-muted-foreground">Total</dt><dd className="font-semibold">{formatBRL(subtotal + effectiveShipping)}</dd></div>
+              </dl>
+              <label className="flex items-start gap-3 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(event) => setAcceptedTerms(event.target.checked)}
+                  className="mt-1"
+                />
+                <span>Revisei os dados, produtos, valores, entrega e pagamento e concordo com as políticas e termos aplicáveis.</span>
+              </label>
+            </section>
+          )}
           {/* Opção de Envio / Retirar na Loja */}
           <section className="space-y-4">
             <h2 className="font-display text-2xl">Forma de Envio</h2>
@@ -216,6 +322,9 @@ function CheckoutPage() {
                 />
               </div>
             </div>
+            <p className="mt-3 text-[11px] text-muted-foreground">
+              Usamos nome, e-mail e telefone somente para identificar o pedido, enviar atualizações e prestar atendimento.
+            </p>
           </section>
 
           {/* Endereço de Entrega */}
@@ -305,6 +414,43 @@ function CheckoutPage() {
                   />
                 </div>
               </div>
+
+              <div className="space-y-3 rounded-xl border border-border p-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={calculatingFreight}
+                  onClick={handleCalculateFreight}
+                  className="gap-2"
+                >
+                  <Calculator className="h-4 w-4" />
+                  {calculatingFreight ? "Consultando Melhor Envio..." : "Calcular frete"}
+                </Button>
+                {quotes.map((quote) => {
+                  const selected = quote.id === selectedQuoteId;
+                  return (
+                    <button
+                      type="button"
+                      key={quote.id}
+                      onClick={() => setSelectedQuoteId(quote.id)}
+                      className={`w-full rounded-lg border p-3 text-left flex items-center justify-between ${
+                        selected ? "border-primary bg-primary/10" : "border-border"
+                      }`}
+                    >
+                      <span className="flex items-center gap-3">
+                        <span className={`h-5 w-5 rounded-full border flex items-center justify-center ${selected ? "bg-primary text-primary-foreground" : ""}`}>
+                          {selected && <Check className="h-3 w-3" />}
+                        </span>
+                        <span>
+                          <span className="block text-sm font-medium">{quote.company} — {quote.name}</span>
+                          <span className="block text-xs text-muted-foreground">Até {quote.deliveryTime} dias úteis</span>
+                        </span>
+                      </span>
+                      <strong className="text-sm">{quote.price === 0 ? "Grátis" : formatBRL(quote.price)}</strong>
+                    </button>
+                  );
+                })}
+              </div>
             </section>
           )}
 
@@ -314,7 +460,7 @@ function CheckoutPage() {
             <div className="grid sm:grid-cols-3 gap-3">
               <button
                 type="button"
-                onClick={() => setPayment("PIX")}
+                onClick={() => { setPayment("PIX"); trackFunnel("PAYMENT_SELECTED", "pix"); }}
                 className={`p-4 rounded-xl border text-left flex items-center gap-3 transition-all ${
                   payment === "PIX" ? "border-foreground bg-secondary font-semibold" : "border-border hover:bg-secondary/50"
                 }`}
@@ -328,7 +474,7 @@ function CheckoutPage() {
 
               <button
                 type="button"
-                onClick={() => setPayment("Cartão")}
+                onClick={() => { setPayment("Cartão"); trackFunnel("PAYMENT_SELECTED", "cartao"); }}
                 className={`p-4 rounded-xl border text-left flex items-center gap-3 transition-all ${
                   payment === "Cartão" ? "border-foreground bg-secondary font-semibold" : "border-border hover:bg-secondary/50"
                 }`}
@@ -342,7 +488,7 @@ function CheckoutPage() {
 
               <button
                 type="button"
-                onClick={() => setPayment("Boleto")}
+                onClick={() => { setPayment("Boleto"); trackFunnel("PAYMENT_SELECTED", "boleto"); }}
                 className={`p-4 rounded-xl border text-left flex items-center gap-3 transition-all ${
                   payment === "Boleto" ? "border-foreground bg-secondary font-semibold" : "border-border hover:bg-secondary/50"
                 }`}
@@ -386,16 +532,20 @@ function CheckoutPage() {
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Frete</span>
-                <span>{shippingOption === "retirada" ? "Grátis" : shipping === 0 ? "Grátis" : formatBRL(shipping)}</span>
+                <span>{shippingOption === "retirada" ? "Grátis" : selectedQuote ? (effectiveShipping === 0 ? "Grátis" : formatBRL(effectiveShipping)) : "Calcule o frete"}</span>
               </div>
               <div className="flex justify-between text-lg font-bold text-foreground border-t border-border pt-3">
                 <span>Total</span>
-                <span>{formatBRL(subtotal + (shippingOption === "retirada" ? 0 : shipping))}</span>
+                <span>{formatBRL(subtotal + effectiveShipping)}</span>
               </div>
             </div>
 
-            <Button type="submit" className="w-full mt-6 rounded-full h-12 text-sm uppercase tracking-widest font-bold">
-              Confirmar e Pagar
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="w-full mt-6 rounded-full h-12 text-sm uppercase tracking-widest font-bold"
+            >
+              {submitting ? "Registrando pedido..." : reviewing ? "Confirmar e Pagar" : "Revisar pedido"}
             </Button>
 
             <p className="text-[11px] text-center text-muted-foreground mt-4 flex items-center justify-center gap-1">
