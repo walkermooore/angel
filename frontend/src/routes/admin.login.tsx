@@ -30,8 +30,8 @@ function AdminLogin() {
       } else {
         toast.error("Credenciais inválidas.");
       }
-    } catch {
-      toast.error("Não foi possível acessar o servidor de autenticação.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível acessar o servidor de autenticação.");
     } finally {
       setSubmitting(false);
     }

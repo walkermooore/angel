@@ -49,7 +49,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest servletRequest) {
         String email = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
-        String pass = request.getPassword() != null ? request.getPassword().trim() : "";
+        String pass = request.getPassword() != null ? request.getPassword() : "";
         String ip = clientIp(servletRequest);
         long retryAfter = loginProtectionService.retryAfter(email, ip);
         if (retryAfter > 0) {

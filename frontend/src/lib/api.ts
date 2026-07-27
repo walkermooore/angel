@@ -67,7 +67,7 @@ export const saveHighlightsToBackend = (ids: string[]) => apiFetch("/destaques",
 
 // Admin Auth
 export const loginAdminBackend = (email: string, pass: string) =>
-  apiFetch<{ success: boolean; csrfToken?: string }>("/auth/login", {
+  apiMutation<{ success: boolean; csrfToken?: string }>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password: pass }),
   });

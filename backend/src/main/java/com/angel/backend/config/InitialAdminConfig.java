@@ -42,8 +42,12 @@ public class InitialAdminConfig implements ApplicationRunner {
             );
         }
 
-        repository.findByEmailIgnoreCase(email).orElseGet(() ->
-            repository.save(new AdminUser(name, email, passwordEncoder.encode(password)))
-        );
+        repository.findByEmailIgnoreCase(email).ifPresentOrElse(existing -> {
+            if (!passwordEncoder.matches(password, existing.getPassword())) {
+                existing.setPassword(passwordEncoder.encode(password));
+                existing.setName(name);
+                repository.save(existing);
+            }
+        }, () -> repository.save(new AdminUser(name, email, passwordEncoder.encode(password))));
     }
 }

@@ -29,7 +29,7 @@ export function useAdminAuth() {
 export const adminAuth = {
   async login(email: string, password: string): Promise<boolean> {
     const cleanEmail = (email || "").trim().toLowerCase();
-    const cleanPass = (password || "").trim();
+    const cleanPass = password || "";
 
     const res = await loginAdminBackend(cleanEmail, cleanPass);
     if (res?.success && res.csrfToken) {
