@@ -39,8 +39,15 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
 function withSecurityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
+  const apiOrigin = (() => {
+    try {
+      return new URL(API_BASE, "http://localhost").origin;
+    } catch {
+      return "";
+    }
+  })();
   headers.set("Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://viacep.com.br; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+    `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' ${apiOrigin} https://viacep.com.br; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`);
   headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("X-Frame-Options", "DENY");
