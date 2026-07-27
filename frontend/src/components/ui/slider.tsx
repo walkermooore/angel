@@ -17,7 +17,7 @@ const Slider = React.forwardRef<
   const handleValueChange = (vals: number[]) => {
     if (!onValueChange) return;
     if (Array.isArray(vals) && vals.length === 2) {
-      let [a, b] = vals;
+      const [a, b] = vals;
       let minV = Math.min(a, b);
       let maxV = Math.max(a, b);
 

@@ -27,8 +27,14 @@ function AdminAboutPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 15 * 1024 * 1024) {
-        toast.error("Imagem muito grande (máximo 15MB).");
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        toast.error("Use uma imagem JPEG, PNG ou WebP.");
+        e.target.value = "";
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("A imagem deve ter no máximo 2 MB.");
+        e.target.value = "";
         return;
       }
       const reader = new FileReader();

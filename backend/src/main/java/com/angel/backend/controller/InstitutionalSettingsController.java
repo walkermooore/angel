@@ -42,10 +42,10 @@ public class InstitutionalSettingsController {
         InstitutionalSettings settings = new InstitutionalSettings();
         settings.setId(SETTINGS_ID);
         settings.setTermsContent("""
-            Bem-vinda à loja online da Angel. Ao acessar e utilizar este site, você concorda com os seguintes termos e condições:
+            Bem-vinda à loja online da Angell. Ao acessar e utilizar este site, você concorda com os seguintes termos e condições:
 
             1. Propriedade Intelectual
-            Todo o conteúdo visual, fotografias, marcas, nomes comerciais e design do site são de propriedade exclusiva da marca Angel. É proibida a reprodução sem autorização prévia por escrito.
+            Todo o conteúdo visual, fotografias, marcas, nomes comerciais e design do site são de propriedade exclusiva da marca Angell. É proibida a reprodução sem autorização prévia por escrito.
 
             2. Informações dos Produtos e Preços
             Trabalhamos para garantir que todas as descrições, preços e disponibilidades dos produtos estejam corretos. Reservamo-nos o direito de corrigir eventuais erros tipográficos de preço sem aviso prévio.
@@ -54,7 +54,7 @@ public class InstitutionalSettingsController {
             Garantimos a autenticidade do teor da Prata 925 de nossas peças. A garantia não cobre mau uso, quedas, arranhões ou exposição a reagentes químicos agressivos.
             """.trim());
         settings.setExchangesContent("""
-            Queremos que você fique 100% satisfeita com sua compra na Angel. Caso precise trocar ou devolver um produto, siga as orientações abaixo:
+            Queremos que você fique 100% satisfeita com sua compra na Angell. Caso precise trocar ou devolver um produto, siga as orientações abaixo:
 
             1. Prazo para Devolução por Arrependimento
             Você tem até 7 (sete) dias corridos após o recebimento do pedido para solicitar a devolução total ou parcial dos produtos por arrependimento, conforme previsto no Código de Defesa do Consumidor.
@@ -69,7 +69,7 @@ public class InstitutionalSettingsController {
             Envie uma mensagem via WhatsApp para nosso atendimento pelo número [contato removido] informando o número do seu pedido e o motivo da troca.
             """.trim());
         settings.setPrivacyContent("""
-            A Angel compromete-se com a segurança e a privacidade dos dados de nossos clientes durante todo o processo de navegação e compra pelo site.
+            A Angell compromete-se com a segurança e a privacidade dos dados de nossos clientes durante todo o processo de navegação e compra pelo site.
 
             1. Coleta de Informações
             Coletamos dados estritamente necessários para o processamento de compras, entrega de pedidos e comunicação referente aos seus pedidos.
