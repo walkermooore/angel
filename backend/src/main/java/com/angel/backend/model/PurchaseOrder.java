@@ -29,11 +29,24 @@ public class PurchaseOrder {
 
     private String phone;
 
+    private String customerName;
+
     private String email;
 
     private String trackingCode;
 
     private String shippingOption;
+
+    @Column(unique = true, length = 100)
+    private String idempotencyKey;
+
+    @Column(unique = true, length = 100)
+    private String publicTrackingToken;
+
+    private LocalDateTime reservationExpiresAt;
+
+    @Column(nullable = false)
+    private String inventoryState = "RESERVED";
 
     @CreationTimestamp
     private LocalDateTime createdAt;

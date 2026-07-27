@@ -27,6 +27,8 @@ export interface Order {
   id: string;
   number: string;
   email: string;
+  customerName?: string;
+  phone?: string;
   createdAt: string;
   items: OrderItem[];
   subtotal: number;
@@ -35,6 +37,7 @@ export interface Order {
   status: OrderStatus;
   shippingOption?: ShippingOption;
   trackingCode?: string;
+  publicTrackingToken?: string;
   payment: "PIX" | "Cartão" | "Boleto";
   address: {
     cep: string;
@@ -45,6 +48,17 @@ export interface Order {
     city: string;
     state: string;
   };
+}
+
+export interface CreateOrderInput {
+  customerName: string;
+  email: string;
+  phone: string;
+  items: Array<{ productId: string; quantity: number }>;
+  shippingOption: ShippingOption;
+  shippingQuoteId: `ME-${number}` | "PICKUP";
+  payment: "PIX" | "CARTAO" | "BOLETO";
+  address: Order["address"];
 }
 
 const PRODUCTS_KEY = "angel:products";
@@ -58,7 +72,7 @@ const developmentSeedOrders: Order[] = [
     createdAt: new Date().toISOString(),
     items: [
       { productId: "1", name: "Colar Éclat Prata 925", price: 170.1, quantity: 1, image: seedProducts[0]?.image || "" },
-      { productId: "4", name: "Sérum Radiance Angel", price: 179, quantity: 1, image: seedProducts[3]?.image || "" },
+      { productId: "4", name: "Sérum Radiance Angell", price: 179, quantity: 1, image: seedProducts[3]?.image || "" },
     ],
     subtotal: 349.1,
     shipping: 0,
@@ -144,6 +158,8 @@ export function mapOrderFromBackend(o: any): Order {
     id: String(o.id),
     number: o.number || "ANG-1001",
     email: o.email || "",
+    customerName: o.customerName || "",
+    phone: o.phone || "",
     createdAt: o.createdAt || new Date().toISOString(),
     items: (o.items || []).map((i: any) => {
       const matchedProd = allProds.find((p) => String(p.id) === String(i.productId));
@@ -161,6 +177,7 @@ export function mapOrderFromBackend(o: any): Order {
     status: normalizeOrderStatus(o.status),
     shippingOption: (o.shippingOption as ShippingOption) || "entrega",
     trackingCode: o.trackingCode || "",
+    publicTrackingToken: o.publicTrackingToken || "",
     payment: o.payment === "PIX" ? "PIX" : o.payment === "BOLETO" ? "Boleto" : "Cartão",
     address: o.address || {
       cep: "",
@@ -189,7 +206,11 @@ export function refreshProductsFromBackend() {
         image: p.image || p.imageUrl || seedProducts[0]?.image || "",
         description: p.description || "",
         details: p.details || [],
-        inStock: p.inStock !== false,
+        stockQuantity: Number(p.stockQuantity ?? 0),
+        reservedQuantity: Number(p.reservedQuantity ?? 0),
+        soldQuantity: Number(p.soldQuantity ?? 0),
+        minimumStock: Number(p.minimumStock ?? 3),
+        inStock: Number(p.stockQuantity ?? 0) - Number(p.reservedQuantity ?? 0) > 0 && p.inStock !== false,
       }));
       productStore.set(mapped);
     }
@@ -245,49 +266,11 @@ export const productsApi = {
 
 export const ordersApi = {
   all: () => orderStore.get(),
-  create: (o: Omit<Order, "id" | "number" | "createdAt" | "status"> & { status?: OrderStatus }): Order => {
-    const now = new Date();
-    const number = `ANG-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${Math.floor(Math.random() * 9000 + 1000)}`;
-    const order: Order = {
-      ...o,
-      id: crypto.randomUUID(),
-      number,
-      createdAt: now.toISOString(),
-      status: o.status ?? "Pendente",
-    };
-    orderStore.set([order, ...orderStore.get()]);
-
-    // Send order payload with productId, name, price, quantity to backend
-    const backendPayload = {
-      number: order.number,
-      email: order.email,
-      items: order.items.map((i) => ({
-        productId: i.productId,
-        name: i.name,
-        price: i.price,
-        quantity: i.quantity,
-      })),
-      subtotal: order.subtotal,
-      shipping: order.shipping,
-      total: order.total,
-      status: "PENDENTE",
-      shippingOption: order.shippingOption,
-      payment: order.payment === "Cartão" ? "CARTAO" : order.payment,
-      address: order.address,
-    };
-
-    createOrderInBackend(backendPayload).then(() => {
-      refreshOrdersFromBackend();
-    });
-
-    // Record audit log
-    auditApi.log(
-      number,
-      "Criação de Pedido",
-      `Pedido criado via ${o.payment} com total de R$ ${o.total.toFixed(2)}`,
-      "Cliente (Checkout)"
-    );
-
+  create: async (payload: CreateOrderInput, idempotencyKey: string): Promise<Order> => {
+    const saved = await createOrderInBackend(payload, idempotencyKey);
+    const order = mapOrderFromBackend(saved);
+    orderStore.set([order, ...orderStore.get().filter((item) => item.id !== order.id)]);
+    refreshProductsFromBackend();
     return order;
   },
   updateStatus: async (id: string, status: OrderStatus) => {

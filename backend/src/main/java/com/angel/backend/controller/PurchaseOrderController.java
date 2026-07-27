@@ -1,10 +1,18 @@
 package com.angel.backend.controller;
 
+import com.angel.backend.dto.CreateOrderRequest;
+import com.angel.backend.dto.PublicOrderTrackingRequest;
+import com.angel.backend.dto.PublicOrderTrackingResponse;
 import com.angel.backend.enums.Status;
 import com.angel.backend.model.AuditLog;
 import com.angel.backend.model.PurchaseOrder;
 import com.angel.backend.repository.AuditLogRepository;
 import com.angel.backend.repository.PurchaseOrderRepository;
+import com.angel.backend.service.OrderCheckoutService;
+import com.angel.backend.service.InventoryService;
+import com.angel.backend.service.PublicOrderTrackingService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,10 +28,22 @@ public class PurchaseOrderController {
 
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final AuditLogRepository auditLogRepository;
+    private final OrderCheckoutService orderCheckoutService;
+    private final InventoryService inventoryService;
+    private final PublicOrderTrackingService publicOrderTrackingService;
 
-    public PurchaseOrderController(PurchaseOrderRepository purchaseOrderRepository, AuditLogRepository auditLogRepository) {
+    public PurchaseOrderController(
+        PurchaseOrderRepository purchaseOrderRepository,
+        AuditLogRepository auditLogRepository,
+        OrderCheckoutService orderCheckoutService,
+        InventoryService inventoryService,
+        PublicOrderTrackingService publicOrderTrackingService
+    ) {
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.auditLogRepository = auditLogRepository;
+        this.orderCheckoutService = orderCheckoutService;
+        this.inventoryService = inventoryService;
+        this.publicOrderTrackingService = publicOrderTrackingService;
     }
 
     private Optional<PurchaseOrder> findByIdOrNumber(String idOrNumber) {
@@ -48,32 +68,19 @@ public class PurchaseOrderController {
     }
 
     @PostMapping
-    public ResponseEntity<PurchaseOrder> criarPedido(@RequestBody PurchaseOrder order) {
-        // Force id to null so JPA generates a fresh UUID in PostgreSQL
-        order.setId(null);
+    public ResponseEntity<PurchaseOrder> criarPedido(
+        @RequestHeader("Idempotency-Key") String idempotencyKey,
+        @Valid @RequestBody CreateOrderRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderCheckoutService.create(request, idempotencyKey));
+    }
 
-        if (order.getNumber() == null || order.getNumber().isBlank()) {
-            order.setNumber("ANG-" + (1000 + (int)(Math.random() * 9000)));
-        }
-        if (order.getStatus() == null) {
-            order.setStatus(Status.PENDENTE);
-        }
-
-        PurchaseOrder saved = purchaseOrderRepository.save(order);
-
-        // Safe audit log insertion
-        try {
-            auditLogRepository.save(new AuditLog(
-                saved.getNumber(),
-                "Criado",
-                "Cliente",
-                "Pedido criado via checkout com total de R$ " + saved.getTotal()
-            ));
-        } catch (Exception e) {
-            // Silently ignore audit log errors to prevent transaction rollback
-        }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    @PostMapping("/acompanhar")
+    public PublicOrderTrackingResponse acompanhar(
+        @Valid @RequestBody PublicOrderTrackingRequest request,
+        HttpServletRequest servletRequest
+    ) {
+        return publicOrderTrackingService.track(request, clientIp(servletRequest));
     }
 
     @PatchMapping("/{idOrNumber}/status")
@@ -83,6 +90,7 @@ public class PurchaseOrderController {
             if (newStatusStr != null) {
                 Status oldStatus = order.getStatus();
                 Status newStatus = parseStatus(newStatusStr);
+                inventoryService.applyStatusTransition(order, oldStatus, newStatus, "Admin");
                 order.setStatus(newStatus);
                 purchaseOrderRepository.save(order);
 
@@ -121,5 +129,12 @@ public class PurchaseOrderController {
     private Status parseStatus(String str) {
         if (str == null) return Status.PENDENTE;
         return Status.fromValue(str);
+    }
+
+    private String clientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        return forwarded == null || forwarded.isBlank()
+            ? request.getRemoteAddr()
+            : forwarded.split(",")[0].trim();
     }
 }

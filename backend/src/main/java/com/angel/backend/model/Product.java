@@ -51,6 +51,18 @@ public class Product {
 
     private Boolean highlighted = false;
 
+    @Column(nullable = false)
+    private Integer stockQuantity = 0;
+
+    @Column(nullable = false)
+    private Integer reservedQuantity = 0;
+
+    @Column(nullable = false)
+    private Integer soldQuantity = 0;
+
+    @Column(nullable = false)
+    private Integer minimumStock = 3;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
@@ -67,5 +79,6 @@ public class Product {
         this.discountPrice = discountPrice;
         this.category = category;
         this.imageUrl = imageUrl;
+        this.stockQuantity = 0;
     }
 }

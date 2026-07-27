@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Product } from "./products";
 import type { ShippingOption } from "./store";
+import { toast } from "sonner";
+import { trackFunnel } from "./funnel";
 
 export interface CartItem {
   product: Product;
@@ -93,15 +95,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
       add: (p) => {
         setItems((prev) => {
           const found = prev.find((i) => i.product.id === p.id);
-          if (found) return prev.map((i) => i.product.id === p.id ? { ...i, quantity: i.quantity + 1 } : i);
+          const available = Math.max(0, p.stockQuantity ?? 0);
+          if (available === 0 || p.inStock === false) {
+            toast.error("Este produto está sem estoque.");
+            return prev;
+          }
+          if (found) {
+            if (found.quantity >= available) {
+              toast.info(`Há somente ${available} unidade(s) disponível(is).`);
+              return prev;
+            }
+            return prev.map((i) => i.product.id === p.id ? { ...i, quantity: i.quantity + 1 } : i);
+          }
           return [...prev, { product: p, quantity: 1 }];
         });
+        trackFunnel("CART_ITEM_ADDED", p.category);
         setIsOpen(true);
       },
-      remove: (id) => setItems((prev) => prev.filter((i) => i.product.id !== id)),
-      updateQty: (id, qty) => setItems((prev) => qty <= 0
-        ? prev.filter((i) => i.product.id !== id)
-        : prev.map((i) => i.product.id === id ? { ...i, quantity: qty } : i)),
+      remove: (id) => setItems((prev) => {
+        const removed = prev.find((item) => item.product.id === id);
+        if (removed) trackFunnel("CART_ITEM_REMOVED", removed.product.category);
+        return prev.filter((i) => i.product.id !== id);
+      }),
+      updateQty: (id, qty) => setItems((prev) => {
+        if (qty <= 0) return prev.filter((i) => i.product.id !== id);
+        return prev.map((item) => {
+          if (item.product.id !== id) return item;
+          const available = Math.max(0, item.product.stockQuantity ?? 0);
+          if (qty > available) {
+            toast.info(`Há somente ${available} unidade(s) disponível(is).`);
+            return { ...item, quantity: available };
+          }
+          return { ...item, quantity: qty };
+        }).filter((item) => item.quantity > 0);
+      }),
       clear: () => { setItems([]); setCep(""); setPhone(""); setShippingOption("entrega"); },
     };
   }, [items, isOpen, cep, phone, shippingOption]);

@@ -27,6 +27,8 @@ type Draft = {
   category: string;
   image: string;
   description: string;
+  stockQuantity: number;
+  minimumStock: number;
 };
 
 const empty: Draft = {
@@ -37,6 +39,8 @@ const empty: Draft = {
   category: "prata",
   image: "",
   description: "",
+  stockQuantity: 0,
+  minimumStock: 3,
 };
 
 function AdminProducts() {
@@ -62,6 +66,8 @@ function AdminProducts() {
       category: p.category,
       image: p.image,
       description: p.description,
+      stockQuantity: p.stockQuantity ?? 0,
+      minimumStock: p.minimumStock ?? 3,
     });
     setOpen(true);
   };
@@ -69,6 +75,16 @@ function AdminProducts() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        toast.error("Use uma imagem JPEG, PNG ou WebP.");
+        e.target.value = "";
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("A imagem deve ter no máximo 2 MB.");
+        e.target.value = "";
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         if (typeof reader.result === "string") {
@@ -109,6 +125,11 @@ function AdminProducts() {
       category: draft.category,
       image: draft.image,
       description: draft.description,
+      stockQuantity: draft.stockQuantity,
+      reservedQuantity: editing ? products.find((p) => p.id === draft.id)?.reservedQuantity ?? 0 : 0,
+      soldQuantity: editing ? products.find((p) => p.id === draft.id)?.soldQuantity ?? 0 : 0,
+      minimumStock: draft.minimumStock,
+      inStock: draft.stockQuantity > 0,
     };
 
     if (editing) {
@@ -149,6 +170,7 @@ function AdminProducts() {
               <TableHead className="text-right">Preço Original</TableHead>
               <TableHead className="text-right">Desconto</TableHead>
               <TableHead className="text-right">Preço Final</TableHead>
+              <TableHead className="text-right">Estoque</TableHead>
               <TableHead className="w-28 text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -188,6 +210,12 @@ function AdminProducts() {
                   </TableCell>
                   <TableCell className="text-right tabular-nums font-semibold text-foreground">
                     {formatBRL(finalPrice)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    <span className={(p.stockQuantity ?? 0) - (p.reservedQuantity ?? 0) <= (p.minimumStock ?? 3) ? "text-destructive font-semibold" : ""}>
+                      {(p.stockQuantity ?? 0) - (p.reservedQuantity ?? 0)} disponível
+                      {(p.reservedQuantity ?? 0) > 0 ? ` (${p.reservedQuantity} reservado)` : ""}
+                    </span>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1">
@@ -232,6 +260,19 @@ function AdminProducts() {
               />
             </div>
 
+            <div>
+              <Label className="text-xs uppercase tracking-widest">Estoque mínimo para alerta</Label>
+              <Input
+                type="number"
+                min="0"
+                max="999999"
+                value={draft.minimumStock}
+                onChange={(e) => setDraft({ ...draft, minimumStock: Math.max(0, parseInt(e.target.value) || 0) })}
+                className="h-11 mt-1.5"
+                required
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs uppercase tracking-widest">Categoria</Label>
@@ -263,6 +304,20 @@ function AdminProducts() {
                   required
                 />
               </div>
+            </div>
+
+            <div>
+              <Label className="text-xs uppercase tracking-widest">Quantidade em estoque</Label>
+              <Input
+                type="number"
+                min="0"
+                max="999999"
+                value={draft.stockQuantity}
+                onKeyDown={(e) => { if (["e", "E", "+", "-", "."].includes(e.key)) e.preventDefault(); }}
+                onChange={(e) => setDraft({ ...draft, stockQuantity: Math.max(0, parseInt(e.target.value) || 0) })}
+                className="h-11 mt-1.5"
+                required
+              />
             </div>
 
             {/* Discount Section with Auto-calculation */}

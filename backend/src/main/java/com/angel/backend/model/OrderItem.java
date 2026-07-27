@@ -21,5 +21,9 @@ public class OrderItem {
 
     private BigDecimal price;
 
+    private BigDecimal originalPrice;
+
+    private Integer discountPercent;
+
     private Integer quantity;
 }
