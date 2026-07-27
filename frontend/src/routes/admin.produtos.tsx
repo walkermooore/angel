@@ -39,7 +39,7 @@ const empty: Draft = {
   category: "prata",
   image: "",
   description: "",
-  stockQuantity: 0,
+  stockQuantity: 100,
   minimumStock: 3,
 };
 
