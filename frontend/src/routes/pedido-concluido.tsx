@@ -3,9 +3,10 @@ import { CheckCircle2, Circle, PackageCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/pedido-concluido")({
-  head: () => ({ meta: [{ title: "Pedido Concluído — Angel" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Pedido Concluído — Angell" }, { name: "robots", content: "noindex" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
     n: (s.n as string) ?? "",
+    t: (s.t as string) ?? "",
   }),
   component: SuccessPage,
 });
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/pedido-concluido")({
 const steps = ["Pedido recebido", "Pagamento aprovado", "Em separação", "Enviado", "Entregue"];
 
 function SuccessPage() {
-  const { n } = Route.useSearch();
+  const { n, t } = Route.useSearch();
   const activeStep = 1;
 
   return (
@@ -52,7 +53,7 @@ function SuccessPage() {
 
       <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
         <Button asChild className="rounded-full h-11 px-8 uppercase tracking-widest text-xs gap-2">
-          <Link to="/meu-pedido" search={{ n }}>
+          <Link to="/meu-pedido" search={{ n, t }}>
             <PackageCheck className="h-4 w-4" /> Acompanhar meu pedido
           </Link>
         </Button>

@@ -1,57 +1,72 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { useOrders, type Order } from "@/lib/store";
+import { type Order } from "@/lib/store";
 import { formatBRL } from "@/lib/cart";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, CheckCircle2, Circle, Package, MapPin, Phone, MessageCircle, AlertCircle, Truck, ExternalLink, Store } from "lucide-react";
 import { toast } from "sonner";
-import { getOrderFromBackend } from "@/lib/api";
+import { trackOrderFromBackend } from "@/lib/api";
 import { mapOrderFromBackend } from "@/lib/store";
 
 export const Route = createFileRoute("/meu-pedido")({
   head: () => ({
     meta: [
-      { title: "Meu Pedidos — Angel" },
-      { name: "description", content: "Acompanhe e rastreie o status do seu pedido na Angel." },
+      { title: "Meu Pedidos — Angell" },
+      { name: "description", content: "Acompanhe e rastreie o status do seu pedido na Angell." },
     ],
   }),
-  validateSearch: (s: Record<string, unknown>) => ({ n: (s.n as string) ?? "" }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    n: (s.n as string) ?? "",
+    t: (s.t as string) ?? "",
+  }),
   component: MeuPedidoPage,
 });
 
 function MeuPedidoPage() {
-  const { n } = Route.useSearch();
-  const orders = useOrders();
+  const { n, t } = Route.useSearch();
   const navigate = useNavigate();
 
   const [searchCode, setSearchCode] = useState(n || "");
   const [foundOrder, setFoundOrder] = useState<Order | null>(null);
   const [searched, setSearched] = useState(false);
+  const [contact, setContact] = useState("");
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     if (n) {
       setSearchCode(n);
-      const localMatch = orders.find((o) => o.number.trim().toLowerCase() === n.trim().toLowerCase());
-      setFoundOrder(localMatch || null);
-      getOrderFromBackend(n).then((remote) => {
-        setFoundOrder(remote ? mapOrderFromBackend(remote) : localMatch || null);
-        setSearched(true);
-      });
+      if (t) {
+        setSearching(true);
+        trackOrderFromBackend(n, "", t)
+          .then((remote) => setFoundOrder(mapOrderFromBackend(remote)))
+          .catch(() => setFoundOrder(null))
+          .finally(() => { setSearched(true); setSearching(false); });
+      }
     }
-  }, [n, orders]);
+  }, [n, t]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     const clean = searchCode.trim();
     if (!clean) return;
 
-    navigate({ to: "/meu-pedido", search: { n: clean } });
-    const match = orders.find((o) => o.number.trim().toLowerCase() === clean.toLowerCase());
-    const remote = await getOrderFromBackend(clean);
-    setFoundOrder(remote ? mapOrderFromBackend(remote) : match || null);
-    setSearched(true);
+    if (!contact.trim()) {
+      toast.error("Informe o e-mail ou telefone usado na compra.");
+      return;
+    }
+    navigate({ to: "/meu-pedido", search: { n: clean, t: "" } });
+    setSearching(true);
+    try {
+      const remote = await trackOrderFromBackend(clean, contact.trim());
+      setFoundOrder(mapOrderFromBackend(remote));
+    } catch {
+      setFoundOrder(null);
+    } finally {
+      setSearched(true);
+      setSearching(false);
+    }
   };
 
   const getStepIndex = (status: string) => {
@@ -94,8 +109,8 @@ function MeuPedidoPage() {
       </div>
 
       {/* Form de Busca de Pedido */}
-      <form onSubmit={handleSearch} className="flex gap-3 max-w-xl">
-        <div className="relative flex-1">
+      <form onSubmit={handleSearch} className="grid sm:grid-cols-[1fr_1fr_auto] gap-3 max-w-3xl">
+        <div className="relative">
           <Input
             value={searchCode}
             onChange={(e) => setSearchCode(e.target.value)}
@@ -103,8 +118,14 @@ function MeuPedidoPage() {
             className="h-12 uppercase font-mono text-sm pl-4"
           />
         </div>
-        <Button type="submit" className="rounded-full h-12 px-8 uppercase tracking-widest text-xs gap-2 shrink-0">
-          <Search className="h-4 w-4" /> Rastrear
+        <Input
+          value={contact}
+          onChange={(e) => setContact(e.target.value)}
+          placeholder="E-mail ou telefone da compra"
+          className="h-12"
+        />
+        <Button disabled={searching} type="submit" className="rounded-full h-12 px-8 uppercase tracking-widest text-xs gap-2 shrink-0">
+          <Search className="h-4 w-4" /> {searching ? "Consultando..." : "Rastrear"}
         </Button>
       </form>
 
@@ -113,8 +134,18 @@ function MeuPedidoPage() {
         <>
           {foundOrder ? (
             <div className="space-y-8 animate-fade-in">
+              {foundOrder.status === "Concluído" && (
+                <div className="p-6 border border-emerald-500/40 bg-emerald-500/10 rounded-2xl text-center">
+                  <span className="inline-flex items-center gap-2 text-sm sm:text-base uppercase tracking-[0.2em] font-bold text-emerald-700 dark:text-emerald-400">
+                    <CheckCircle2 className="h-5 w-5" /> Pedido finalizado
+                  </span>
+                </div>
+              )}
+
               {/* Exibe o Código de Rastreio APENAS se o pedido for Entrega e tiver código */}
-              {foundOrder.trackingCode && foundOrder.status === "Enviado" && !isRetirada ? (
+              {foundOrder.trackingCode &&
+              (foundOrder.status === "Enviado" || foundOrder.status === "Concluído") &&
+              !isRetirada ? (
                 <div className="p-6 border border-blue-500/30 bg-blue-500/10 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="space-y-1 text-center sm:text-left">
                     <span className="text-[11px] uppercase tracking-widest font-bold text-blue-600 dark:text-blue-400 flex items-center justify-center sm:justify-start gap-1.5">
@@ -155,12 +186,23 @@ function MeuPedidoPage() {
                       <Store className="h-4 w-4" /> Retirada na Loja Física
                     </span>
                     <p className="font-semibold text-lg text-foreground">
-                      {foundOrder.status === "Enviado"
-                        ? "🎉 Seu pedido já está PRONTO PARA RETIRADA na loja!"
+                      {foundOrder.status === "Pronto para Retirada"
+                        ? "Seu pedido já está PRONTO PARA RETIRADA na loja!"
                         : "[endereço de retirada removido]"}
                     </p>
-                    <p className="text-xs text-muted-foreground">Apresente este código do pedido no balcão de atendimento para retirar.</p>
                   </div>
+                  <Button
+                    asChild
+                    className="rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold text-xs uppercase tracking-wider px-6 h-11 shrink-0 gap-2"
+                  >
+                    <a
+                      href={`}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <MessageCircle className="h-4 w-4" /> Conversar no WhatsApp
+                    </a>
+                  </Button>
                 </div>
               ) : null}
 
@@ -244,9 +286,6 @@ function MeuPedidoPage() {
                             </p>
                           </div>
                         </div>
-                        <span className="font-semibold text-sm tabular-nums text-foreground shrink-0">
-                          {formatBRL(item.price * item.quantity)}
-                        </span>
                       </div>
                     ))}
                   </CardContent>
@@ -254,7 +293,7 @@ function MeuPedidoPage() {
               )}
 
               {/* Detalhes de Endereço e Pagamento */}
-              <div className="grid sm:grid-cols-2 gap-6">
+              {foundOrder.address.street && foundOrder.total > 0 && <div className="grid sm:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2">
@@ -303,27 +342,29 @@ function MeuPedidoPage() {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
+              </div>}
 
               {/* Botão de Suporte via WhatsApp */}
-              <div className="p-6 border border-emerald-500/20 rounded-xl bg-emerald-500/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div>
-                  <h3 className="font-semibold text-foreground text-base">Dúvidas sobre o rastreamento?</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Fale diretamente com nossa equipe de suporte no WhatsApp.</p>
-                </div>
-                <Button
-                  asChild
-                  className="rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold text-xs uppercase tracking-wider px-6 h-11 shrink-0 gap-2"
-                >
-                  <a
-                    href={`}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+              {(!isRetirada || foundOrder.status === "Concluído") && (
+                <div className="p-6 border border-emerald-500/20 rounded-xl bg-emerald-500/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-semibold text-foreground text-base">Dúvidas sobre o rastreamento?</h3>
+                    <p className="text-xs text-muted-foreground mt-1">Fale diretamente com nossa equipe de suporte no WhatsApp.</p>
+                  </div>
+                  <Button
+                    asChild
+                    className="rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold text-xs uppercase tracking-wider px-6 h-11 shrink-0 gap-2"
                   >
-                    <MessageCircle className="h-4 w-4" /> WhatsApp ([contato removido])
-                  </a>
-                </Button>
-              </div>
+                    <a
+                      href={`}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <MessageCircle className="h-4 w-4" /> WhatsApp ([contato removido])
+                    </a>
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="p-8 border border-dashed rounded-xl bg-secondary/10 text-center space-y-4 max-w-xl mx-auto">
