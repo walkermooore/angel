@@ -9,7 +9,7 @@ import { Sun, Moon } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/login")({
-  head: () => ({ meta: [{ title: "Admin — Angel" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Admin — Angell" }, { name: "robots", content: "noindex" }] }),
   component: AdminLogin,
 });
 
@@ -49,7 +49,7 @@ function AdminLogin() {
 
       <form onSubmit={submit} className="w-full max-w-sm bg-background border border-border rounded-xl p-8 shadow-sm">
         <div className="text-center mb-8">
-          <p className="font-display text-4xl">Angel</p>
+          <p className="font-display text-4xl">Angell</p>
           <p className="text-xs uppercase tracking-widest text-muted-foreground mt-1">Painel administrativo</p>
         </div>
         <div className="space-y-4">

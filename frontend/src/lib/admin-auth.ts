@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { loginAdminBackend } from "./api";
+import { loginAdminBackend, logoutAdminBackend } from "./api";
 
 const KEY = "angel:admin";
 type Listener = () => void;
@@ -7,21 +7,7 @@ const listeners = new Set<Listener>();
 
 function getSnapshot(): boolean {
   if (typeof window === "undefined") return false;
-  const token = localStorage.getItem("angel:admin_token");
-  if (localStorage.getItem(KEY) !== "1" || !token) return false;
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1].replaceAll("-", "+").replaceAll("_", "/")));
-    if (typeof payload.exp !== "number" || payload.exp * 1000 <= Date.now()) {
-      localStorage.removeItem(KEY);
-      localStorage.removeItem("angel:admin_token");
-      return false;
-    }
-    return true;
-  } catch {
-    localStorage.removeItem(KEY);
-    localStorage.removeItem("angel:admin_token");
-    return false;
-  }
+  return localStorage.getItem(KEY) === "1";
 }
 
 function emit() {
@@ -46,17 +32,18 @@ export const adminAuth = {
     const cleanPass = (password || "").trim();
 
     const res = await loginAdminBackend(cleanEmail, cleanPass);
-    if (res?.success && res.token) {
-      localStorage.setItem("angel:admin_token", res.token);
+    if (res?.success && res.csrfToken) {
+      localStorage.setItem("angel:csrf_token", res.csrfToken);
       localStorage.setItem(KEY, "1");
       emit();
       return true;
     }
     return false;
   },
-  logout() {
+  async logout() {
+    await logoutAdminBackend().catch(() => null);
     localStorage.removeItem(KEY);
-    localStorage.removeItem("angel:admin_token");
+    localStorage.removeItem("angel:csrf_token");
     emit();
   },
   isAuthed: () => getSnapshot(),

@@ -5,10 +5,12 @@ import com.angel.backend.repository.AdminUserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(name = "app.security.bootstrap-admin-enabled", havingValue = "true")
 public class InitialAdminConfig implements ApplicationRunner {
 
     private final AdminUserRepository repository;
@@ -22,7 +24,7 @@ public class InitialAdminConfig implements ApplicationRunner {
         PasswordEncoder passwordEncoder,
         @Value("${app.security.initial-admin-email:}") String email,
         @Value("${app.security.initial-admin-password:}") String password,
-        @Value("${app.security.initial-admin-name:Administrador Angel}") String name
+        @Value("${app.security.initial-admin-name:Administrador Angell}") String name
     ) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;

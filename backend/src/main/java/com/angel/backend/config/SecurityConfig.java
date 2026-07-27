@@ -14,6 +14,14 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
+import com.angel.backend.security.ApiRateLimitFilter;
+import com.angel.backend.security.AdminCsrfFilter;
+import jakarta.servlet.http.Cookie;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -23,24 +31,66 @@ import java.nio.charset.StandardCharsets;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, ApiRateLimitFilter rateLimitFilter,
+                                            AdminCsrfFilter csrfFilter,
+                                            @Value("${app.security.require-https:false}") boolean requireHttps)
+        throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> {})
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/pedidos").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout", "/api/pedidos", "/api/frete/cotacoes",
+                    "/api/pedidos/acompanhar", "/api/metricas/funil").permitAll()
+                .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers(HttpMethod.GET,
                     "/api/produtos", "/api/categorias", "/api/destaques", "/api/faq",
-                    "/api/home-settings", "/api/sobre-nos", "/api/paginas-institucionais",
-                    "/api/pedidos/*"
+                    "/api/home-settings", "/api/sobre-nos", "/api/paginas-institucionais"
                 ).permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/frete/oauth/callback").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().hasAuthority("SCOPE_ADMIN")
             )
-            .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> {}));
+            .oauth2ResourceServer(oauth -> oauth
+                .bearerTokenResolver(cookieBearerTokenResolver())
+                .jwt(jwt -> {}))
+            .headers(headers -> headers
+                .contentSecurityPolicy(csp -> csp.policyDirectives(
+                    "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"))
+                .frameOptions(frame -> frame.deny())
+                .referrerPolicy(referrer -> referrer.policy(
+                    ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .includeSubDomains(true)
+                    .preload(true)
+                    .maxAgeInSeconds(31_536_000))
+                .addHeaderWriter(new StaticHeadersWriter(
+                    "Permissions-Policy",
+                    "camera=(), microphone=(), geolocation=(), payment=(), usb=()"))
+                .addHeaderWriter(new StaticHeadersWriter(
+                    "Cross-Origin-Resource-Policy", "same-site")))
+            .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(csrfFilter, ApiRateLimitFilter.class);
+        if (requireHttps) {
+            http.redirectToHttps(https -> {});
+        }
         return http.build();
+    }
+
+    @Bean
+    BearerTokenResolver cookieBearerTokenResolver() {
+        DefaultBearerTokenResolver headerResolver = new DefaultBearerTokenResolver();
+        return request -> {
+            String headerToken = headerResolver.resolve(request);
+            if (headerToken != null) return headerToken;
+            if (request.getCookies() != null) {
+                for (Cookie cookie : request.getCookies()) {
+                    if ("ADMIN_SESSION".equals(cookie.getName())) return cookie.getValue();
+                }
+            }
+            return null;
+        };
     }
 
     @Bean
