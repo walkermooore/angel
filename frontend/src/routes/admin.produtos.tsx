@@ -129,7 +129,6 @@ function AdminProducts() {
       reservedQuantity: editing ? products.find((p) => p.id === draft.id)?.reservedQuantity ?? 0 : 0,
       soldQuantity: editing ? products.find((p) => p.id === draft.id)?.soldQuantity ?? 0 : 0,
       minimumStock: draft.minimumStock,
-      inStock: draft.stockQuantity > 0,
     };
 
     try {

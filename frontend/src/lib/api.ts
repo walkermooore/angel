@@ -50,12 +50,27 @@ async function apiMutation<T>(endpoint: string, options: RequestInit): Promise<T
 }
 
 // Products
+function productMutationPayload(data: any) {
+  return {
+    name: data.name,
+    description: data.description,
+    price: data.price,
+    discountPercent: data.discountPercent,
+    discountPrice: data.discountPrice,
+    category: data.category,
+    image: data.image,
+    highlighted: data.highlighted,
+    stockQuantity: data.stockQuantity,
+    minimumStock: data.minimumStock,
+  };
+}
+
 export const getProductsFromBackend = () => apiFetch<any[]>("/produtos");
 export const getProductFromBackend = (id: string) => apiFetch<any>(`/produtos/${encodeURIComponent(id)}`);
 export const createProductInBackend = (data: any) =>
-  apiMutation<any>("/produtos", { method: "POST", body: JSON.stringify(data) });
+  apiMutation<any>("/produtos", { method: "POST", body: JSON.stringify(productMutationPayload(data)) });
 export const updateProductInBackend = (id: string, data: any) =>
-  apiMutation<any>(`/produtos/${id}`, { method: "PUT", body: JSON.stringify(data) });
+  apiMutation<any>(`/produtos/${id}`, { method: "PUT", body: JSON.stringify(productMutationPayload(data)) });
 export const deleteProductFromBackend = (id: string) =>
   apiMutation<boolean>(`/produtos/${id}`, { method: "DELETE" });
 
