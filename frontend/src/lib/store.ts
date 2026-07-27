@@ -245,22 +245,40 @@ export const productsApi = {
   add: async (p: Omit<Product, "id"> & { id?: string }) => {
     const id = p.id ?? crypto.randomUUID();
     const newProd = { ...p, id };
+    const previous = productStore.get();
     productStore.set([newProd, ...productStore.get()]);
-    await createProductInBackend(newProd);
-    refreshProductsFromBackend();
+    try {
+      await createProductInBackend(newProd);
+      refreshProductsFromBackend();
+    } catch (error) {
+      productStore.set(previous);
+      throw error;
+    }
   },
   update: async (id: string, patch: Partial<Product>) => {
+    const previous = productStore.get();
     productStore.set(productStore.get().map((p) => (p.id === id ? { ...p, ...patch } : p)));
     const updated = productStore.get().find((p) => p.id === id);
     if (updated) {
-      await updateProductInBackend(id, updated);
-      refreshProductsFromBackend();
+      try {
+        await updateProductInBackend(id, updated);
+        refreshProductsFromBackend();
+      } catch (error) {
+        productStore.set(previous);
+        throw error;
+      }
     }
   },
   remove: async (id: string) => {
+    const previous = productStore.get();
     productStore.set(productStore.get().filter((p) => p.id !== id));
-    await deleteProductFromBackend(id);
-    refreshProductsFromBackend();
+    try {
+      await deleteProductFromBackend(id);
+      refreshProductsFromBackend();
+    } catch (error) {
+      productStore.set(previous);
+      throw error;
+    }
   },
 };
 

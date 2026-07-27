@@ -107,7 +107,7 @@ function AdminProducts() {
     }));
   };
 
-  const save = (e: React.FormEvent) => {
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!draft.name || !draft.image || draft.price <= 0) {
       toast.error("Preencha o nome, imagem e um preço válido");
@@ -132,20 +132,28 @@ function AdminProducts() {
       inStock: draft.stockQuantity > 0,
     };
 
-    if (editing) {
-      productsApi.update(draft.id!, payload);
-      toast.success("Produto atualizado com sucesso!");
-    } else {
-      productsApi.add(payload);
-      toast.success("Produto criado com sucesso!");
+    try {
+      if (editing) {
+        await productsApi.update(draft.id!, payload);
+        toast.success("Produto atualizado com sucesso!");
+      } else {
+        await productsApi.add(payload);
+        toast.success("Produto criado com sucesso!");
+      }
+      setOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível salvar o produto.");
     }
-    setOpen(false);
   };
 
-  const remove = (p: Product) => {
+  const remove = async (p: Product) => {
     if (confirm(`Excluir o produto "${p.name}"?`)) {
-      productsApi.remove(p.id);
-      toast.success("Produto removido");
+      try {
+        await productsApi.remove(p.id);
+        toast.success("Produto removido");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Não foi possível excluir o produto.");
+      }
     }
   };
 
