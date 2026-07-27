@@ -9,33 +9,31 @@ export function ProductCard({ product }: { product: Product }) {
   const effectivePrice = product.discountPrice ?? product.price;
   const hasDiscount = Boolean(product.discountPercent && product.discountPercent > 0);
 
-  const handleAdd = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleAdd = () => {
     add({ ...product, price: effectivePrice });
   };
 
   return (
     <div className="group flex flex-col h-full min-w-0">
-      {/* Image container as div */}
-      <Link
-        to="/produtos/$slug"
-        params={{ slug: productSlug(product) }}
-        className="relative overflow-hidden rounded-lg bg-secondary/40 aspect-square w-full shrink-0 text-left cursor-pointer"
-        style={{ aspectRatio: "1 / 1" }}
-      >
-        <img
-          src={product.image}
-          alt={product.name}
-          loading="eager"
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-        />
-
-        {hasDiscount && (
-          <span className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-foreground text-background shadow">
-            {product.discountPercent}% OFF
-          </span>
-        )}
-
+      <div className="relative overflow-hidden rounded-lg bg-secondary/40 aspect-square w-full shrink-0">
+        <Link
+          to="/produtos/$slug"
+          params={{ slug: productSlug(product) }}
+          className="absolute inset-0 text-left cursor-pointer"
+          aria-label={`Ver detalhes de ${product.name}`}
+        >
+          <img
+            src={product.image}
+            alt={product.name}
+            loading="eager"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+          {hasDiscount && (
+            <span className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-foreground text-background shadow">
+              {product.discountPercent}% OFF
+            </span>
+          )}
+        </Link>
         <div className="absolute inset-x-3 bottom-3 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
           <Button
             onClick={handleAdd}
@@ -44,7 +42,7 @@ export function ProductCard({ product }: { product: Product }) {
             Adicionar
           </Button>
         </div>
-      </Link>
+      </div>
 
       <div className="mt-4 flex flex-col flex-1 justify-between gap-1">
         <div>
