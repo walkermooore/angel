@@ -24,7 +24,7 @@ function mapProduct(value: any): Product {
   };
 }
 
-export const Route = createFileRoute("/produtos/$slug")({
+export const Route = createFileRoute("/produtos_/$slug")({
   loader: async ({ params }) => {
     const separator = params.slug.lastIndexOf("--");
     const productId = separator >= 0 ? params.slug.slice(separator + 2) : "";
