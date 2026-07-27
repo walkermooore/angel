@@ -19,7 +19,7 @@ export const Route = createFileRoute("/admin/pedidos")({
 const DELIVERY_STATUSES: OrderStatus[] = ["Pendente", "Pago", "Enviado", "Concluído"];
 const PICKUP_STATUSES: OrderStatus[] = ["Pendente", "Pago", "Pronto para Retirada", "Concluído"];
 
-export function AdminOrders() {
+function AdminOrders() {
   const orders = useOrders();
   const [selected, setSelected] = useState<Order | null>(null);
   const [editStatus, setEditStatus] = useState<OrderStatus>("Pendente");

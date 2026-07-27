@@ -14,7 +14,7 @@ export const Route = createFileRoute("/admin/home")({
   component: AdminHomePage,
 });
 
-export function AdminHomePage() {
+function AdminHomePage() {
   const settings = useHomeSettings();
   const products = useProducts();
 

@@ -10,7 +10,7 @@ export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
 });
 
-export function AdminDashboard() {
+function AdminDashboard() {
   const orders = useOrders();
   const products = useProducts();
   const categories = useCategories();

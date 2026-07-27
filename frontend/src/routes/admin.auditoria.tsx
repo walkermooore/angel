@@ -10,7 +10,7 @@ export const Route = createFileRoute("/admin/auditoria")({
   component: AdminAuditoria,
 });
 
-export function AdminAuditoria() {
+function AdminAuditoria() {
   const logs = useAuditLogs();
   const [filter, setFilter] = useState("");
 

@@ -13,7 +13,7 @@ export const Route = createFileRoute("/admin/faq")({
   component: AdminFaqPage,
 });
 
-export function AdminFaqPage() {
+function AdminFaqPage() {
   const faqs = useFaqs();
 
   const [openModal, setOpenModal] = useState(false);
