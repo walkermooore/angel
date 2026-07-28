@@ -1,9 +1,8 @@
-FROM eclipse-temurin:21-jdk AS build
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
-COPY .mvn .mvn
-COPY mvnw pom.xml ./
+COPY pom.xml ./
 COPY src src
-RUN ./mvnw -B -Dmaven.test.skip=true package
+RUN mvn -B -Dmaven.test.skip=true package
 
 FROM eclipse-temurin:21-jre
 RUN useradd --system --uid 10001 angell
