@@ -169,6 +169,12 @@ Arquivos de referência:
 | `ADMIN_INITIAL_PASSWORD` | Só no bootstrap | Senha inicial, mínimo 12 caracteres. |
 | `ADMIN_INITIAL_NAME` | Não | Nome do primeiro administrador. |
 | `CORS_ALLOWED_ORIGINS` | Não | Origens separadas por vírgula; padrão `http://localhost:5173`. |
+| `TRANSACTIONAL_EMAIL_ENABLED` | Não | Ativa o envio real por SMTP depois que as credenciais estiverem configuradas. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` | Para e-mail | Credenciais do provedor SMTP transacional. |
+| `TRANSACTIONAL_EMAIL_FROM` | Para e-mail | Remetente verificado no provedor. |
+| `TRANSACTIONAL_WHATSAPP_ENABLED` | Não | Ativa a entrega pelo webhook do provedor oficial de WhatsApp. |
+| `WHATSAPP_WEBHOOK_URL`, `WHATSAPP_API_TOKEN` | Para WhatsApp | Endpoint e token do provedor; o payload enviado contém `to` e `message`. |
+| `NOTIFICATIONS_PUBLIC_URL` | Não | URL pública usada nos links seguros de pedido e pós-venda. |
 
 Exemplo de desenvolvimento:
 

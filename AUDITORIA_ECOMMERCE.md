@@ -269,15 +269,19 @@ Há persistência, quantidades, disponibilidade, remover/desfazer, resumo, frete
 
 ## 15. Comunicações transacionais
 
-**Estado: ❌ pendente**
+**Estado: ✅ infraestrutura; 🟡 homologação dos provedores**
 
-Falta provedor de e-mail/WhatsApp para pedido, cobrança, pagamento, preparação, retirada, envio, rastreamento, conclusão, cancelamento e reembolso. Usar link seguro e dados mínimos.
+Há outbox persistente para e-mail e WhatsApp, tentativas com backoff, falha definitiva, repetição manual, destinos mascarados no painel e links seguros com dados mínimos. Pedido criado/cobrança, pagamento/preparação, retirada, envio, rastreamento, conclusão, cancelamento e atualizações de estorno/pós-venda geram eventos.
+
+O e-mail usa SMTP e o WhatsApp usa um webhook de provedor com payload mínimo (`to` e `message`). Enquanto um canal não possui credenciais, as mensagens ficam em `AWAITING_CONFIGURATION`, sem serem descartadas. Falta cadastrar remetente/domínio, contratar/homologar os provedores e testar entregabilidade, opt-out aplicável e templates aprovados do WhatsApp.
 
 ## 16. Cancelamento, troca e devolução
 
-**Estado: ❌ pendente**
+**Estado: ✅ processo implementado; 🟡 estorno externo**
 
-Criar solicitação, protocolo, motivo, prazo, anexos, acompanhamento, painel, estorno, retorno ao estoque, mensagens e auditoria. Textos institucionais não substituem o processo.
+O cliente pode abrir cancelamento, troca ou devolução validando pedido e contato/link seguro, informar motivo e detalhes, anexar até três imagens e receber protocolo com código de acompanhamento. O painel possui fila, prazo, status, mensagem ao cliente, controle de estorno e retorno idempotente dos itens ao estoque, com movimentação e auditoria.
+
+O cancelamento aprovado altera o pedido e libera reservas. Devoluções recebidas podem retornar a venda baixada ao estoque uma única vez. O status do estorno é rastreado, mas a execução financeira automática ainda depende da API e das credenciais reais do provedor de pagamento.
 
 ## 17. Área do cliente
 
