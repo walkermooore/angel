@@ -1,6 +1,11 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useCart, formatBRL } from "@/lib/cart";
-import { isProductAvailable, products as seedProducts, type Product } from "@/lib/products";
+import {
+  availableProductQuantityLabel,
+  isProductAvailable,
+  products as seedProducts,
+  type Product,
+} from "@/lib/products";
 import { getProductFromBackend, getProductsFromBackend } from "@/lib/api";
 import { productSlug, productUrl, SITE_URL } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
@@ -122,7 +127,9 @@ function ProductPage() {
           <p className="text-2xl font-semibold mt-6">{formatBRL(price)}</p>
           {product.discountPrice && <p className="text-sm text-muted-foreground line-through">{formatBRL(product.price)}</p>}
           <p className="mt-6 leading-relaxed text-muted-foreground">{product.description}</p>
-          <p className={`mt-6 text-sm font-medium ${available ? "text-emerald-600" : "text-destructive"}`}>{available ? "Disponível em estoque" : "Produto indisponível"}</p>
+          <p className={`mt-6 text-sm font-medium ${available ? "text-emerald-600" : "text-destructive"}`}>
+            {available ? availableProductQuantityLabel(product) : "Produto indisponível"}
+          </p>
           <Button disabled={!available} onClick={() => add(product)} className="w-full h-12 rounded-full mt-6 uppercase tracking-widest text-xs">Adicionar à sacola</Button>
           <div className="mt-8 space-y-3 text-sm text-muted-foreground">
             <p className="flex gap-2"><Truck className="h-4 w-4"/> Frete e prazo calculados pelo CEP na sacola.</p>

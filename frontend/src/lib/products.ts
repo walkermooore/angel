@@ -25,10 +25,19 @@ export interface Product {
   inStock?: boolean;
 }
 
-export function isProductAvailable(product: Product): boolean {
+export function availableProductQuantity(product: Product): number {
   const stock = Number(product.stockQuantity ?? 0);
   const reserved = Number(product.reservedQuantity ?? 0);
-  return product.inStock !== false && stock - reserved > 0;
+  return Math.max(0, stock - reserved);
+}
+
+export function availableProductQuantityLabel(product: Product): string {
+  const quantity = availableProductQuantity(product);
+  return quantity === 1 ? "1 unidade disponível" : `${quantity} unidades disponíveis`;
+}
+
+export function isProductAvailable(product: Product): boolean {
+  return product.inStock !== false && availableProductQuantity(product) > 0;
 }
 
 export const products: Product[] = [

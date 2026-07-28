@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useCart, formatBRL } from "@/lib/cart";
-import type { Product } from "@/lib/products";
+import { availableProductQuantityLabel, type Product } from "@/lib/products";
 import { Link } from "@tanstack/react-router";
 import { productSlug } from "@/lib/seo";
 
@@ -61,6 +61,9 @@ export function ProductCard({ product }: { product: Product }) {
           </Link>
           <p className="text-xs text-muted-foreground mt-1 capitalize">
             {product.category === "prata" ? "Prata 925" : product.category}
+          </p>
+          <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mt-1">
+            {availableProductQuantityLabel(product)}
           </p>
         </div>
         <Button

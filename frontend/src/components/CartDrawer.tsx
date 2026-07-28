@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { calculateMelhorEnvioFreight, type ShippingQuote } from "@/lib/melhorenvio";
 import { trackFunnel } from "@/lib/funnel";
+import { availableProductQuantityLabel } from "@/lib/products";
 
 export function CartDrawer() {
   const {
@@ -142,6 +143,9 @@ export function CartDrawer() {
                       </div>
                       <p className="text-xs text-muted-foreground mt-1 capitalize">
                         {product.category === "prata" ? "Prata 925" : product.category}
+                      </p>
+                      <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mt-1">
+                        {availableProductQuantityLabel(product)}
                       </p>
                       <div className="mt-auto flex items-center justify-between pt-3">
                         <div className="inline-flex items-center border border-border rounded-full">
