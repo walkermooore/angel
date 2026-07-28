@@ -25,6 +25,10 @@ function mapProduct(value: any): Product {
     image: value.image || value.imageUrl || "",
     stockQuantity: Number(value.stockQuantity ?? 0),
     reservedQuantity: Number(value.reservedQuantity ?? 0),
+    weight: value.weight == null ? undefined : Number(value.weight),
+    height: value.height == null ? undefined : Number(value.height),
+    width: value.width == null ? undefined : Number(value.width),
+    length: value.length == null ? undefined : Number(value.length),
     inStock: Number(value.stockQuantity ?? 0) - Number(value.reservedQuantity ?? 0) > 0 && value.inStock !== false,
   };
 }

@@ -53,6 +53,7 @@ public class ProductController {
         produto.setReservedQuantity(0);
         produto.setSoldQuantity(0);
         if (produto.getMinimumStock() == null || produto.getMinimumStock() < 0) produto.setMinimumStock(3);
+        validateShippingDimensions(produto);
         validateImage(produto.getImageUrl());
         // Ensure id is null so JPA generates a fresh UUID
         produto.setId(null);
@@ -85,6 +86,11 @@ public class ProductController {
             if (request.getMinimumStock() != null && request.getMinimumStock() >= 0) {
                 produto.setMinimumStock(request.getMinimumStock());
             }
+            if (request.getWeight() != null) produto.setWeight(request.getWeight());
+            if (request.getHeight() != null) produto.setHeight(request.getHeight());
+            if (request.getWidth() != null) produto.setWidth(request.getWidth());
+            if (request.getLength() != null) produto.setLength(request.getLength());
+            validateShippingDimensions(produto);
             Product saved = productRepository.save(produto);
             int difference = saved.getStockQuantity() - previousStock;
             if (difference != 0) {
@@ -132,6 +138,16 @@ public class ProductController {
             }
         } catch (IllegalArgumentException exception) {
             throw new CheckoutException(HttpStatus.BAD_REQUEST, "A imagem Base64 é inválida.");
+        }
+    }
+
+    private void validateShippingDimensions(Product product) {
+        if (product.getWeight() == null || product.getWeight().signum() <= 0
+            || product.getHeight() == null || product.getHeight() <= 0
+            || product.getWidth() == null || product.getWidth() <= 0
+            || product.getLength() == null || product.getLength() <= 0) {
+            throw new CheckoutException(HttpStatus.BAD_REQUEST,
+                "Informe peso, altura, largura e comprimento válidos para o produto.");
         }
     }
 

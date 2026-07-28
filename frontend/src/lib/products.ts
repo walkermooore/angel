@@ -22,7 +22,18 @@ export interface Product {
   reservedQuantity?: number;
   soldQuantity?: number;
   minimumStock?: number;
+  weight?: number;
+  height?: number;
+  width?: number;
+  length?: number;
   inStock?: boolean;
+}
+
+export function hasProductShippingDimensions(product: Product): boolean {
+  return Number(product.weight ?? 0) > 0
+    && Number(product.height ?? 0) > 0
+    && Number(product.width ?? 0) > 0
+    && Number(product.length ?? 0) > 0;
 }
 
 export function availableProductQuantity(product: Product): number {

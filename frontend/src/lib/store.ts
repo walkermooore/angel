@@ -210,6 +210,10 @@ export function refreshProductsFromBackend() {
         reservedQuantity: Number(p.reservedQuantity ?? 0),
         soldQuantity: Number(p.soldQuantity ?? 0),
         minimumStock: Number(p.minimumStock ?? 3),
+        weight: p.weight == null ? undefined : Number(p.weight),
+        height: p.height == null ? undefined : Number(p.height),
+        width: p.width == null ? undefined : Number(p.width),
+        length: p.length == null ? undefined : Number(p.length),
         inStock: Number(p.stockQuantity ?? 0) - Number(p.reservedQuantity ?? 0) > 0 && p.inStock !== false,
       }));
       productStore.set(mapped);

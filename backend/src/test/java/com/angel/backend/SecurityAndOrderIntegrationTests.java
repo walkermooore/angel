@@ -266,6 +266,10 @@ class SecurityAndOrderIntegrationTests {
         product.setImageUrl("https://example.test/product.jpg");
         product.setHighlighted(false);
         product.setStockQuantity(stock);
+        product.setWeight(new BigDecimal("0.100"));
+        product.setHeight(4);
+        product.setWidth(12);
+        product.setLength(16);
         return productRepository.saveAndFlush(product);
     }
 
@@ -342,14 +346,26 @@ class SecurityAndOrderIntegrationTests {
                       "image":"https://example.test/product.jpg",
                       "highlighted":false,
                       "stockQuantity":7,
-                      "minimumStock":3
+                      "minimumStock":3,
+                      "weight":0.250,
+                      "height":6,
+                      "width":14,
+                      "length":20
                     }
                     """))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.stockQuantity").value(7));
+            .andExpect(jsonPath("$.stockQuantity").value(7))
+            .andExpect(jsonPath("$.weight").value(0.250))
+            .andExpect(jsonPath("$.height").value(6))
+            .andExpect(jsonPath("$.width").value(14))
+            .andExpect(jsonPath("$.length").value(20));
 
         Product saved = productRepository.findById(product.getId()).orElseThrow();
         assertThat(saved.getStockQuantity()).isEqualTo(7);
+        assertThat(saved.getWeight()).isEqualByComparingTo("0.250");
+        assertThat(saved.getHeight()).isEqualTo(6);
+        assertThat(saved.getWidth()).isEqualTo(14);
+        assertThat(saved.getLength()).isEqualTo(20);
         assertThat(inventoryMovementRepository.findByProductIdOrderByCreatedAtDesc(product.getId()))
             .anySatisfy(movement -> {
                 assertThat(movement.getMovementType()).isEqualTo("ADJUSTMENT");

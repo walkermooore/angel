@@ -99,10 +99,10 @@ public class MelhorEnvioService {
             subtotal = subtotal.add(unitPrice.multiply(BigDecimal.valueOf(entry.getValue())));
             shipmentProducts.add(Map.of(
                 "id", product.getId().toString(),
-                "width", 12,
-                "height", 4,
-                "length", 16,
-                "weight", 0.10,
+                "width", product.getWidth(),
+                "height", product.getHeight(),
+                "length", product.getLength(),
+                "weight", product.getWeight(),
                 "insurance_value", unitPrice,
                 "quantity", entry.getValue()
             ));
@@ -188,6 +188,13 @@ public class MelhorEnvioService {
     private void validateProduct(Product product) {
         if (product == null || product.getDeletedAt() != null || product.getPrice() == null) {
             throw new CheckoutException(HttpStatus.BAD_REQUEST, "Produto indisponível para cotação.");
+        }
+        if (product.getWeight() == null || product.getWeight().signum() <= 0
+            || product.getHeight() == null || product.getHeight() <= 0
+            || product.getWidth() == null || product.getWidth() <= 0
+            || product.getLength() == null || product.getLength() <= 0) {
+            throw new CheckoutException(HttpStatus.UNPROCESSABLE_ENTITY,
+                "O produto " + product.getName() + " ainda não possui peso e dimensões para calcular o frete.");
         }
     }
 

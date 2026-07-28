@@ -29,6 +29,10 @@ type Draft = {
   description: string;
   stockQuantity: number;
   minimumStock: number;
+  weight?: number;
+  height?: number;
+  width?: number;
+  length?: number;
 };
 
 const empty: Draft = {
@@ -41,6 +45,10 @@ const empty: Draft = {
   description: "",
   stockQuantity: 100,
   minimumStock: 3,
+  weight: undefined,
+  height: undefined,
+  width: undefined,
+  length: undefined,
 };
 
 function AdminProducts() {
@@ -68,6 +76,10 @@ function AdminProducts() {
       description: p.description,
       stockQuantity: p.stockQuantity ?? 0,
       minimumStock: p.minimumStock ?? 3,
+      weight: p.weight,
+      height: p.height,
+      width: p.width,
+      length: p.length,
     });
     setOpen(true);
   };
@@ -110,7 +122,11 @@ function AdminProducts() {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!draft.name || !draft.image || draft.price <= 0) {
-      toast.error("Preencha o nome, imagem e um preço válido");
+      toast.error("Preencha o nome, imagem e um preço válido.");
+      return;
+    }
+    if (!draft.weight || !draft.height || !draft.width || !draft.length) {
+      toast.error("Informe o peso e todas as dimensões do produto.");
       return;
     }
 
@@ -129,6 +145,10 @@ function AdminProducts() {
       reservedQuantity: editing ? products.find((p) => p.id === draft.id)?.reservedQuantity ?? 0 : 0,
       soldQuantity: editing ? products.find((p) => p.id === draft.id)?.soldQuantity ?? 0 : 0,
       minimumStock: draft.minimumStock,
+      weight: draft.weight,
+      height: draft.height,
+      width: draft.width,
+      length: draft.length,
     };
 
     try {
@@ -325,6 +345,69 @@ function AdminProducts() {
                 className="h-11 mt-1.5"
                 required
               />
+            </div>
+
+            <div className="p-4 border rounded-lg bg-secondary/20 space-y-3">
+              <div>
+                <Label className="text-xs uppercase tracking-widest font-semibold">Dados para cálculo do frete</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Informe o produto já embalado. Peso em quilogramas e dimensões em centímetros.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <Label className="text-[11px]">Peso (kg)</Label>
+                  <Input
+                    type="number"
+                    min="0.001"
+                    step="0.001"
+                    value={draft.weight ?? ""}
+                    onChange={(e) => setDraft({ ...draft, weight: e.target.value ? Number(e.target.value) : undefined })}
+                    placeholder="0,100"
+                    className="h-11 mt-1.5 bg-background"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label className="text-[11px]">Altura (cm)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={draft.height ?? ""}
+                    onChange={(e) => setDraft({ ...draft, height: e.target.value ? Number(e.target.value) : undefined })}
+                    placeholder="4"
+                    className="h-11 mt-1.5 bg-background"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label className="text-[11px]">Largura (cm)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={draft.width ?? ""}
+                    onChange={(e) => setDraft({ ...draft, width: e.target.value ? Number(e.target.value) : undefined })}
+                    placeholder="12"
+                    className="h-11 mt-1.5 bg-background"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label className="text-[11px]">Comprimento (cm)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={draft.length ?? ""}
+                    onChange={(e) => setDraft({ ...draft, length: e.target.value ? Number(e.target.value) : undefined })}
+                    placeholder="16"
+                    className="h-11 mt-1.5 bg-background"
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Discount Section with Auto-calculation */}

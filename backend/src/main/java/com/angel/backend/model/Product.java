@@ -63,6 +63,15 @@ public class Product {
     @Column(nullable = false)
     private Integer minimumStock = 3;
 
+    @Column(precision = 10, scale = 3)
+    private BigDecimal weight;
+
+    private Integer height;
+
+    private Integer width;
+
+    private Integer length;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

@@ -45,4 +45,20 @@ public class ProductRequest {
     @NotNull
     @PositiveOrZero
     private Integer minimumStock;
+
+    @NotNull
+    @Positive
+    private BigDecimal weight;
+
+    @NotNull
+    @Positive
+    private Integer height;
+
+    @NotNull
+    @Positive
+    private Integer width;
+
+    @NotNull
+    @Positive
+    private Integer length;
 }

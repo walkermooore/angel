@@ -62,6 +62,10 @@ function productMutationPayload(data: any) {
     highlighted: data.highlighted,
     stockQuantity: data.stockQuantity,
     minimumStock: data.minimumStock,
+    weight: data.weight,
+    height: data.height,
+    width: data.width,
+    length: data.length,
   };
 }
 
