@@ -42,13 +42,15 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout", "/api/pedidos", "/api/frete/cotacoes",
-                    "/api/pedidos/acompanhar", "/api/metricas/funil").permitAll()
+                    "/api/pedidos/acompanhar", "/api/metricas/funil",
+                    "/api/pagamentos/infinitepay/checkout", "/api/pagamentos/infinitepay/webhook").permitAll()
                 .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers(HttpMethod.GET,
                     "/api/produtos", "/api/categorias", "/api/destaques", "/api/faq",
                     "/api/home-settings", "/api/sobre-nos", "/api/paginas-institucionais"
                 ).permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/produtos/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/pagamentos/infinitepay/status").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/frete/oauth/callback").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().hasAuthority("SCOPE_ADMIN")

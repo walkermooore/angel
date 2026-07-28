@@ -292,6 +292,23 @@ class SecurityAndOrderIntegrationTests {
     }
 
     @Test
+    void exposesInfinitePayAsDisabledUntilItIsConfigured() throws Exception {
+        mockMvc.perform(get("/api/pagamentos/infinitepay/status"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.enabled").value(false));
+
+        mockMvc.perform(post("/api/pagamentos/infinitepay/checkout")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "orderNumber":"ANG-TESTE",
+                      "trackingToken":"12345678901234567890"
+                    }
+                    """))
+            .andExpect(status().isServiceUnavailable());
+    }
+
+    @Test
     void updatesStatusAndTrackingWithJwt() throws Exception {
         PurchaseOrder order = new PurchaseOrder();
         order.setNumber("ANG-INTEGRATION-001");

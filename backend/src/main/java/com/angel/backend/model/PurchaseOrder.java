@@ -66,6 +66,24 @@ public class PurchaseOrder {
 
     private BigDecimal total;
 
+    private String paymentProvider;
+
+    @Column(columnDefinition = "TEXT")
+    private String paymentCheckoutUrl;
+
+    private String paymentInvoiceSlug;
+
+    private String paymentTransactionNsu;
+
+    @Column(columnDefinition = "TEXT")
+    private String paymentReceiptUrl;
+
+    private String paymentCaptureMethod;
+
+    private Integer paymentInstallments;
+
+    private LocalDateTime paymentConfirmedAt;
+
     @Enumerated(EnumType.STRING)
     private Status status;
 
