@@ -88,13 +88,40 @@ export const getHighlightsFromBackend = () => apiFetch<any[]>("/destaques");
 export const saveHighlightsToBackend = (ids: string[]) => apiFetch("/destaques", { method: "POST", body: JSON.stringify(ids) });
 
 // Admin Auth
-export const loginAdminBackend = (email: string, pass: string) =>
-  apiMutation<{ success: boolean; csrfToken?: string }>("/auth/login", {
+export const loginAdminBackend = (email: string, pass: string, totpCode?: string) =>
+  apiMutation<{ success: boolean; csrfToken?: string; requiresTwoFactor?: boolean }>("/auth/login", {
     method: "POST",
-    body: JSON.stringify({ email, password: pass }),
+    body: JSON.stringify({ email, password: pass, totpCode }),
   });
 export const logoutAdminBackend = () =>
   apiMutation<{ success: boolean }>("/auth/logout", { method: "POST" });
+export const getAdminProfile = () =>
+  apiFetch<{ id: string; name: string; email: string; role: string; twoFactorEnabled: boolean }>("/auth/me");
+export const setupAdminTwoFactor = () =>
+  apiMutation<{ secret: string; provisioningUri: string }>("/auth/2fa/setup", { method: "POST" });
+export const confirmAdminTwoFactor = (code: string) =>
+  apiMutation<{ success: boolean }>("/auth/2fa/confirm", {
+    method: "POST", body: JSON.stringify({ code }),
+  });
+export const disableAdminTwoFactor = (password: string, code: string) =>
+  apiMutation<{ success: boolean }>("/auth/2fa/disable", {
+    method: "POST", body: JSON.stringify({ password, code }),
+  });
+export type AdminSession = {
+  id: string;
+  createdAt: string;
+  lastSeenAt: string;
+  expiresAt: string;
+  ipAddress: string;
+  userAgent: string;
+  revoked: boolean;
+  current: boolean;
+};
+export const getAdminSessions = () => apiFetch<AdminSession[]>("/auth/sessions");
+export const revokeAdminSession = (id: string) =>
+  apiMutation<{ success: boolean; current: boolean }>(`/auth/sessions/${id}`, { method: "DELETE" });
+export const revokeOtherAdminSessions = () =>
+  apiMutation<{ success: boolean }>("/auth/sessions/revoke-others", { method: "POST" });
 
 // Orders
 export const getOrdersFromBackend = () => apiFetch<any[]>("/pedidos");

@@ -18,6 +18,8 @@ function AdminLogin() {
   const { isDark, toggleTheme, mounted } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [totpCode, setTotpCode] = useState("");
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -25,10 +27,12 @@ function AdminLogin() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      if (await adminAuth.login(email, password)) {
+      const result = await adminAuth.login(email, password, requiresTwoFactor ? totpCode : undefined);
+      if (result === "success") {
         navigate({ to: "/admin", replace: true });
       } else {
-        toast.error("Credenciais inválidas.");
+        setRequiresTwoFactor(true);
+        toast.info("Informe o código do seu aplicativo autenticador.");
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível acessar o servidor de autenticação.");
@@ -64,6 +68,22 @@ function AdminLogin() {
               required
             />
           </div>
+          {requiresTwoFactor && (
+            <div>
+              <Label className="text-xs uppercase tracking-widest">Código de autenticação</Label>
+              <Input
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                placeholder="000000"
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                className="h-11 mt-1.5 tracking-[0.35em] text-center"
+                minLength={6}
+                required
+                autoFocus
+              />
+            </div>
+          )}
           <div>
             <Label className="text-xs uppercase tracking-widest">Senha</Label>
             <Input

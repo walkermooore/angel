@@ -27,18 +27,25 @@ export function useAdminAuth() {
 }
 
 export const adminAuth = {
-  async login(email: string, password: string): Promise<boolean> {
+  async login(email: string, password: string, totpCode?: string): Promise<"success" | "requiresTwoFactor"> {
     const cleanEmail = (email || "").trim().toLowerCase();
     const cleanPass = password || "";
 
-    const res = await loginAdminBackend(cleanEmail, cleanPass);
-    if (res?.success && res.csrfToken) {
-      localStorage.setItem("angel:csrf_token", res.csrfToken);
-      localStorage.setItem(KEY, "1");
-      emit();
-      return true;
+    try {
+      const res = await loginAdminBackend(cleanEmail, cleanPass, totpCode);
+      if (res?.success && res.csrfToken) {
+        localStorage.setItem("angel:csrf_token", res.csrfToken);
+        localStorage.setItem(KEY, "1");
+        emit();
+        return "success";
+      }
+    } catch (error) {
+      if (!totpCode && error instanceof Error && /código de autenticação|duas etapas/i.test(error.message)) {
+        return "requiresTwoFactor";
+      }
+      throw error;
     }
-    return false;
+    throw new Error("Credenciais inválidas.");
   },
   async logout() {
     await logoutAdminBackend().catch(() => null);
