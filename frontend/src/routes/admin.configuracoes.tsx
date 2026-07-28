@@ -5,15 +5,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { getInfinitePayStatus, getMelhorEnvioAuthorizationUrl } from "@/lib/api";
+import { getInfinitePayStatus, getInstitutionalSettingsFromBackend, getMelhorEnvioAuthorizationUrl } from "@/lib/api";
 import {
   institutionalDefaults,
-  refreshInstitutionalSettings,
+  normalizeInstitutionalSettings,
   saveInstitutionalSettings,
   type InstitutionalSettings,
 } from "@/lib/institutionalStore";
 
 export const Route = createFileRoute("/admin/configuracoes")({
+  loader: async () => {
+    const [pages, infinitePay] = await Promise.all([
+      getInstitutionalSettingsFromBackend(),
+      getInfinitePayStatus(),
+    ]);
+    return {
+      pages: normalizeInstitutionalSettings(pages),
+      infinitePayEnabled: infinitePay?.enabled === true,
+    };
+  },
   component: AdminConfiguracoes,
 });
 
@@ -32,11 +42,12 @@ const defaults: Settings = {
 };
 
 function AdminConfiguracoes() {
+  const loaded = Route.useLoaderData();
   const [settings, setSettings] = useState<Settings>(defaults);
-  const [pages, setPages] = useState<InstitutionalSettings>(institutionalDefaults);
+  const [pages, setPages] = useState<InstitutionalSettings>(loaded.pages);
   const [saving, setSaving] = useState(false);
   const [authorizingShipping, setAuthorizingShipping] = useState(false);
-  const [infinitePayEnabled, setInfinitePayEnabled] = useState(false);
+  const [infinitePayEnabled] = useState(loaded.infinitePayEnabled);
 
   useEffect(() => {
     try {
@@ -51,13 +62,6 @@ function AdminConfiguracoes() {
     } catch {
       setSettings(defaults);
     }
-  }, []);
-
-  useEffect(() => {
-    refreshInstitutionalSettings().then(setPages);
-    getInfinitePayStatus()
-      .then((status) => setInfinitePayEnabled(status?.enabled === true))
-      .catch(() => setInfinitePayEnabled(false));
   }, []);
 
   const save = async (e: React.FormEvent) => {

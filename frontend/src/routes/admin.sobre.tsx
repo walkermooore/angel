@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
-import { useAboutSettings, aboutApi, type AboutSettings } from "@/lib/aboutStore";
+import { aboutApi, hydrateAboutSettings, normalizeAboutSettings, type AboutSettings } from "@/lib/aboutStore";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -8,20 +8,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Save, Upload, Info, Image as ImageIcon } from "lucide-react";
-import { uploadImage } from "@/lib/api";
+import { getAboutSettingsFromBackend, uploadImage } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/sobre")({
+  loader: async () => normalizeAboutSettings(await getAboutSettingsFromBackend()),
   head: () => ({ meta: [{ title: "Editar Sobre Nós — Admin" }] }),
   component: AdminAboutPage,
 });
 
 function AdminAboutPage() {
-  const live = useAboutSettings();
+  const live = Route.useLoaderData();
   const [form, setForm] = useState<AboutSettings>(live);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    hydrateAboutSettings(live);
     setForm(live);
   }, [live]);
 

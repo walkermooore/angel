@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
-import { useProducts } from "@/lib/store";
-import { useCategories } from "@/lib/categories";
+import { mapProductFromBackend, setProductsFromBackend } from "@/lib/store";
+import { mapCategoriesFromBackend, setCategoriesFromBackend } from "@/lib/categories";
+import { getCategoriesFromBackend, getProductsFromBackend } from "@/lib/api";
 import { ProductCard } from "@/components/ProductCard";
 import { isProductAvailable } from "@/lib/products";
 import { Slider } from "@/components/ui/slider";
@@ -11,6 +12,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/produtos")({
+  loader: async () => {
+    const [remoteProducts, remoteCategories] = await Promise.all([
+      getProductsFromBackend(),
+      getCategoriesFromBackend(),
+    ]);
+    return {
+      products: Array.isArray(remoteProducts) ? remoteProducts.map(mapProductFromBackend) : null,
+      categories: Array.isArray(remoteCategories) ? mapCategoriesFromBackend(remoteCategories) : null,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Produtos — Angell" },
@@ -27,14 +38,20 @@ type DiscountFilter = "todos" | "com-desconto" | "10-ou-mais" | "20-ou-mais";
 type Sort = "destaque" | "menor" | "maior" | "nome";
 
 function ProdutosPage() {
-  const products = useProducts();
-  const categories = useCategories();
+  const loaded = Route.useLoaderData();
+  const products = useMemo(() => loaded.products ?? [], [loaded.products]);
+  const categories = loaded.categories ?? [];
 
   const [filterCat, setFilterCat] = useState<FilterCategory>("todos");
   const [filterDiscount, setFilterDiscount] = useState<DiscountFilter>("todos");
   const [range, setRange] = useState<[number, number]>([0, 300]);
   const [tempRange, setTempRange] = useState<[number, number]>([0, 300]);
   const [sort, setSort] = useState<Sort>("destaque");
+
+  useEffect(() => {
+    if (loaded.products) setProductsFromBackend(loaded.products);
+    if (loaded.categories) setCategoriesFromBackend(loaded.categories);
+  }, [loaded.products, loaded.categories]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -184,7 +201,9 @@ function ProdutosPage() {
             </Select>
           </div>
 
-          {filtered.length === 0 ? (
+          {loaded.products === null ? (
+            <ProductGridSkeleton />
+          ) : filtered.length === 0 ? (
             <div className="py-20 text-center border border-dashed rounded-xl p-8 bg-secondary/10">
               <p className="text-base font-medium text-foreground">Nenhum produto encontrado com estes filtros.</p>
               <Button
@@ -209,6 +228,19 @@ function ProdutosPage() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function ProductGridSkeleton() {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8" role="status" aria-label="Carregando produtos">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="space-y-3">
+          <div className="aspect-square rounded-xl bg-secondary/50 animate-pulse" />
+          <div className="h-4 rounded bg-secondary/40 animate-pulse" />
+        </div>
+      ))}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { useHomeSettings, homeApi, type ValueItem } from "@/lib/homeStore";
-import { useProducts } from "@/lib/store";
+import { homeApi, hydrateHomeSettings, normalizeHomeSettings, type ValueItem } from "@/lib/homeStore";
+import { mapProductFromBackend, setProductsFromBackend } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,21 +9,40 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Home, Save, Upload, Star, Layout, Sparkles, Plus, Trash2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
-import { uploadImage } from "@/lib/api";
+import { getHomeSettingsFromBackend, getProductsFromBackend, uploadImage } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/home")({
+  loader: async () => {
+    const [settings, products] = await Promise.all([
+      getHomeSettingsFromBackend(),
+      getProductsFromBackend(),
+    ]);
+    return {
+      settings: normalizeHomeSettings(settings),
+      products: Array.isArray(products) ? products.map(mapProductFromBackend) : [],
+    };
+  },
   component: AdminHomePage,
 });
 
 function AdminHomePage() {
-  const settings = useHomeSettings();
-  const products = useProducts();
+  const { settings, products } = Route.useLoaderData();
 
   const [heroTitle, setHeroTitle] = useState(settings.heroTitle);
   const [heroDescription, setHeroDescription] = useState(settings.heroDescription);
   const [heroImage, setHeroImage] = useState(settings.heroImage);
   const [values, setValues] = useState<ValueItem[]>(settings.values);
   const [highlights, setHighlights] = useState<string[]>(settings.highlightIds);
+
+  useEffect(() => {
+    hydrateHomeSettings(settings);
+    setProductsFromBackend(products);
+    setHeroTitle(settings.heroTitle);
+    setHeroDescription(settings.heroDescription);
+    setHeroImage(settings.heroImage);
+    setValues(settings.values);
+    setHighlights(settings.highlightIds);
+  }, [settings, products]);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

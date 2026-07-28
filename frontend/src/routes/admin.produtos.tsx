@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { useProducts, productsApi } from "@/lib/store";
-import { useCategories } from "@/lib/categories";
+import { useEffect, useState } from "react";
+import { mapProductFromBackend, setProductsFromBackend, useProducts, productsApi } from "@/lib/store";
+import { mapCategoriesFromBackend, setCategoriesFromBackend, useCategories } from "@/lib/categories";
 import { formatBRL } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,9 +13,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertTriangle, Pencil, Trash2, Plus, Image as ImageIcon, Upload, Percent, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { hasProductShippingDimensions, type Product } from "@/lib/products";
-import { uploadImage } from "@/lib/api";
+import { getCategoriesFromBackend, getProductsFromBackend, uploadImage } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/produtos")({
+  loader: async () => {
+    const [products, categories] = await Promise.all([getProductsFromBackend(), getCategoriesFromBackend()]);
+    return {
+      products: Array.isArray(products) ? products.map(mapProductFromBackend) : [],
+      categories: Array.isArray(categories) ? mapCategoriesFromBackend(categories) : [],
+    };
+  },
   component: AdminProducts,
 });
 
@@ -53,10 +60,20 @@ const empty: Draft = {
 };
 
 function AdminProducts() {
-  const products = useProducts();
-  const categories = useCategories();
+  const loaded = Route.useLoaderData();
+  const liveProducts = useProducts();
+  const liveCategories = useCategories();
+  const [hydrated, setHydrated] = useState(false);
+  const products = hydrated ? liveProducts : loaded.products;
+  const categories = hydrated ? liveCategories : loaded.categories;
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Draft>(empty);
+
+  useEffect(() => {
+    setProductsFromBackend(loaded.products);
+    setCategoriesFromBackend(loaded.categories);
+    setHydrated(true);
+  }, [loaded.products, loaded.categories]);
 
   const editing = Boolean(draft.id);
 

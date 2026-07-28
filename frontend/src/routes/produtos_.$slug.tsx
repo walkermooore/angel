@@ -3,7 +3,6 @@ import { useCart, formatBRL } from "@/lib/cart";
 import {
   availableProductQuantityLabel,
   isProductAvailable,
-  products as seedProducts,
   type Product,
 } from "@/lib/products";
 import { getProductFromBackend, getProductsFromBackend } from "@/lib/api";
@@ -41,7 +40,10 @@ export const Route = createFileRoute("/produtos_/$slug")({
     if (remoteProduct) return mapProduct(remoteProduct);
 
     const remote = await getProductsFromBackend();
-    const products = remote?.length ? remote.map(mapProduct) : seedProducts;
+    if (!Array.isArray(remote)) {
+      throw new Error("Não foi possível consultar o produto.");
+    }
+    const products = remote.map(mapProduct);
     const product = products.find((item) =>
       String(item.id) === productId || productSlug(item) === params.slug
     );
@@ -124,7 +126,11 @@ function ProductPage() {
         <Link to="/">Início</Link> / <Link to="/produtos">Produtos</Link> / <span>{product.name}</span>
       </nav>
       <div className="grid md:grid-cols-2 gap-10 md:gap-16">
-        <img src={product.image} alt={product.name} className="w-full aspect-square object-cover rounded-2xl bg-secondary" />
+        {product.image ? (
+          <img src={product.image} alt={product.name} className="w-full aspect-square object-cover rounded-2xl bg-secondary" />
+        ) : (
+          <div className="flex aspect-square items-center justify-center rounded-2xl bg-secondary text-sm text-muted-foreground">Imagem indisponível</div>
+        )}
         <div>
           <p className="uppercase tracking-widest text-xs text-muted-foreground capitalize">{product.category}</p>
           <h1 className="font-display text-4xl sm:text-5xl mt-3">{product.name}</h1>

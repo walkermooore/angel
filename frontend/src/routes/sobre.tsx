@@ -1,7 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useAboutSettings } from "@/lib/aboutStore";
+import { getAboutSettingsFromBackend } from "@/lib/api";
+import { hydrateAboutSettings, normalizeAboutSettings } from "@/lib/aboutStore";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/sobre")({
+  loader: async () => {
+    const remote = await getAboutSettingsFromBackend();
+    return { about: normalizeAboutSettings(remote), unavailable: remote === null };
+  },
   head: () => ({
     meta: [
       { title: "Sobre Nós — Angell" },
@@ -14,7 +20,12 @@ export const Route = createFileRoute("/sobre")({
 });
 
 function SobrePage() {
-  const about = useAboutSettings();
+  const { about, unavailable } = Route.useLoaderData();
+  useEffect(() => hydrateAboutSettings(about), [about]);
+
+  if (unavailable) {
+    return <div className="mx-auto max-w-7xl px-5 sm:px-8 py-16"><div className="h-96 rounded-2xl bg-secondary/50 animate-pulse" role="status" aria-label="Carregando conteúdo" /></div>;
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-5 sm:px-8 pt-10 sm:pt-16 pb-20">
@@ -27,7 +38,7 @@ function SobrePage() {
 
       <div className="grid md:grid-cols-2 gap-12 md:gap-16 mt-16 items-start">
         <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-secondary/40 order-2 md:order-1 border border-border/60">
-          <img src={about.imageUrl} alt="Sobre a Angell" className="w-full h-full object-cover" width={1200} height={900} loading="lazy" />
+          {about.imageUrl ? <img src={about.imageUrl} alt="Sobre a Angell" className="w-full h-full object-cover" width={1200} height={900} loading="lazy" /> : null}
         </div>
         <div className="order-1 md:order-2 space-y-5 text-muted-foreground leading-relaxed">
           <p>{about.paragraph1}</p>

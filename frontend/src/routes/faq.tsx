@@ -1,15 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { useFaqs } from "@/lib/faqStore";
+import { getFaqsFromBackend } from "@/lib/api";
+import { hydrateFaqs, normalizeFaqs } from "@/lib/faqStore";
 import { HelpCircle } from "lucide-react";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/faq")({
+  loader: async () => {
+    const remote = await getFaqsFromBackend();
+    return { faqs: Array.isArray(remote) ? normalizeFaqs(remote) : null };
+  },
   head: () => ({ meta: [{ title: "Perguntas Frequentes (FAQ) — Angell" }] }),
   component: FaqPage,
 });
 
 function FaqPage() {
-  const faqs = useFaqs();
+  const { faqs } = Route.useLoaderData();
+  useEffect(() => {
+    if (faqs) hydrateFaqs(faqs);
+  }, [faqs]);
 
   return (
     <div className="mx-auto max-w-4xl px-5 sm:px-8 py-12 sm:py-20 space-y-8">
@@ -23,7 +32,11 @@ function FaqPage() {
         </p>
       </div>
 
-      <Accordion type="single" collapsible className="w-full space-y-4">
+      {faqs === null ? (
+        <div className="space-y-4" role="status" aria-label="Carregando perguntas">
+          {Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-16 rounded-xl bg-secondary/50 animate-pulse" />)}
+        </div>
+      ) : <Accordion type="single" collapsible className="w-full space-y-4">
         {faqs.map((faq, i) => (
           <AccordionItem key={faq.id} value={`item-${i}`} className="border rounded-xl px-6 bg-secondary/10">
             <AccordionTrigger className="text-base font-medium hover:no-underline py-4 text-foreground text-left">
@@ -34,7 +47,7 @@ function FaqPage() {
             </AccordionContent>
           </AccordionItem>
         ))}
-      </Accordion>
+      </Accordion>}
     </div>
   );
 }

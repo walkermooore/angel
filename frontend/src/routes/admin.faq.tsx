@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useFaqs, faqApi, type FaqItem } from "@/lib/faqStore";
+import { faqApi, hydrateFaqs, normalizeFaqs, type FaqItem } from "@/lib/faqStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,13 +8,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { HelpCircle, Plus, Edit, Trash2, Save } from "lucide-react";
 import { toast } from "sonner";
+import { getFaqsFromBackend } from "@/lib/api";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/admin/faq")({
+  loader: async () => {
+    const remote = await getFaqsFromBackend();
+    return Array.isArray(remote) ? normalizeFaqs(remote) : [];
+  },
   component: AdminFaqPage,
 });
 
 function AdminFaqPage() {
-  const faqs = useFaqs();
+  const faqs = Route.useLoaderData();
+  useEffect(() => hydrateFaqs(faqs), [faqs]);
 
   const [openModal, setOpenModal] = useState(false);
   const [editingFaq, setEditingFaq] = useState<FaqItem | null>(null);

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCategories, categoriesApi } from "@/lib/categories";
-import { useProducts, productsApi } from "@/lib/store";
-import { useState } from "react";
+import { mapCategoriesFromBackend, setCategoriesFromBackend, useCategories, categoriesApi } from "@/lib/categories";
+import { mapProductFromBackend, setProductsFromBackend, useProducts, productsApi } from "@/lib/store";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -10,14 +10,32 @@ import { Label } from "@/components/ui/label";
 import { Pencil, Trash2, Plus, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/cart";
+import { getCategoriesFromBackend, getProductsFromBackend } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/categorias")({
+  loader: async () => {
+    const [categories, products] = await Promise.all([getCategoriesFromBackend(), getProductsFromBackend()]);
+    return {
+      categories: Array.isArray(categories) ? mapCategoriesFromBackend(categories) : [],
+      products: Array.isArray(products) ? products.map(mapProductFromBackend) : [],
+    };
+  },
   component: AdminCategories,
 });
 
 function AdminCategories() {
-  const categories = useCategories();
-  const products = useProducts();
+  const loaded = Route.useLoaderData();
+  const liveCategories = useCategories();
+  const liveProducts = useProducts();
+  const [hydrated, setHydrated] = useState(false);
+  const categories = hydrated ? liveCategories : loaded.categories;
+  const products = hydrated ? liveProducts : loaded.products;
+
+  useEffect(() => {
+    setCategoriesFromBackend(loaded.categories);
+    setProductsFromBackend(loaded.products);
+    setHydrated(true);
+  }, [loaded.categories, loaded.products]);
 
   const [openAddModal, setOpenAddModal] = useState(false);
   const [newCatName, setNewCatName] = useState("");
