@@ -1,6 +1,6 @@
 # Auditoria e estado de produção do e-commerce Angell
 
-**Revisão:** 27 de julho de 2026  
+**Revisão:** 28 de julho de 2026
 **Escopo:** frontend, backend, banco, checkout, painel, segurança, frete, estoque, privacidade, SEO, testes e operação.
 
 Este documento substitui a auditoria anterior. Ele registra o estado atual do código, o que foi implementado, o que ainda falta e como testar.
@@ -18,30 +18,30 @@ O projeto já possui uma base segura para criação de pedidos: o backend recalc
 
 **O site ainda não deve aceitar vendas reais.** Os bloqueadores atuais são:
 
-1. não existe integração real com gateway de pagamento;
+1. a integração com a InfinitePay está implementada, mas permanece desativada até a configuração e homologação da conta;
 2. ainda há dados empresariais de exemplo, incluindo CNPJ fictício;
 3. o Melhor Envio precisa ser autorizado e homologado com credenciais reais;
-4. peso e dimensões ainda não vêm do cadastro de cada produto;
+4. os produtos aceitam peso e dimensões reais, mas os dados definitivos ainda precisam ser cadastrados e validados;
 5. backup, monitoramento e alertas precisam ser instalados na infraestrutura;
-6. faltam testes E2E do checkout e auditoria sistemática de acessibilidade;
-7. comunicação transacional, cancelamento, troca, devolução e reembolso não possuem fluxo completo.
+6. faltam testes E2E do checkout, incluindo a InfinitePay, e auditoria sistemática de acessibilidade;
+7. comunicação transacional, cancelamento, troca, devolução, estorno e reembolso não possuem fluxo completo.
 
 | Área | Estado | Resumo |
 |---|---:|---|
 | Preços e totais | ✅ | Backend ignora valores comerciais do navegador |
 | Confirmação e idempotência | ✅ | Sacola só é limpa após persistência |
 | Estoque e concorrência | ✅ | Reserva transacional e teste da última unidade |
-| Melhor Envio | 🟡 | OAuth e cotação; falta homologação e dados físicos reais |
-| Pagamento | ❌ | Não há cobrança nem webhooks reais |
+| Melhor Envio | 🟡 | OAuth, cotação e medidas por produto; falta configuração e homologação real |
+| Pagamento | 🟡 | Checkout e webhook InfinitePay implementados, mas desativados e não homologados |
 | Acompanhamento público | ✅ | Token/contato, DTO reduzido e rate limiting |
 | Dados do cliente | ✅ | Nome, telefone e e-mail persistidos |
-| Painel | 🟡 | Cookie HttpOnly e CSRF; faltam 2FA e revogação |
+| Painel | 🟡 | Cookie HttpOnly, CSRF e avisos operacionais; faltam 2FA e revogação |
 | Imagens | 🟡 | Limites e assinaturas; ainda usa Base64/banco |
 | Checkout | 🟡 | Revisão e retry; faltam E2E e refinamento dos erros |
 | Legal e privacidade | ❌ | Textos precisam dos dados reais |
 | Backup e incidentes | 🟡 | Scripts e política; falta implantação |
 | SEO técnico | ✅ | URLs, sitemap, robots, feed e JSON-LD |
-| Testes e CI | 🟡 | Boa base backend; faltam E2E e contrato |
+| Testes e CI | 🟡 | Backend, frontend e imagens validados; faltam E2E e contrato |
 | Observabilidade | 🟡 | Métricas definidas; falta operar o stack |
 
 ## Validação geral
@@ -53,7 +53,7 @@ cd backend
 ./mvnw test
 ```
 
-Resultado esperado nesta revisão: **14 testes aprovados**. A suíte cobre criação segura, adulteração de preço, estoque, concorrência, expiração, idempotência, acompanhamento, rate limiting, autenticação, CORS, headers e payload inesperado.
+Resultado esperado nesta revisão: **16 testes aprovados**. A suíte cobre criação segura, adulteração de preço, estoque, persistência de ajustes, concorrência, expiração, idempotência, acompanhamento, rate limiting, autenticação, CORS, headers, payload inesperado e estado desativado da InfinitePay.
 
 ### Frontend
 
@@ -76,28 +76,33 @@ docker build -t angell-frontend:test ./frontend
 
 As duas imagens foram construídas com sucesso durante a implementação.
 
-## 1. Pagamento
+## 1. Pagamento — InfinitePay
 
-**Estado: ❌ pendente crítico**
+**Estado: 🟡 implementado no código; pendente de configuração e homologação**
 
-O pedido é persistido, mas não há cobrança real em PIX, cartão ou boleto.
+A integração utiliza o Checkout Integrado hospedado da InfinitePay. O backend cria o link com os valores autoritativos do pedido, envia produtos, frete, cliente e endereço, e o frontend redireciona o cliente para o ambiente seguro do provedor.
 
-### Falta
+O webhook não é aceito como prova isolada: o backend consulta `payment_check`, confere pedido, transação e valor, impede a troca de transação, processa repetições de forma idempotente e somente então altera o pedido de `PENDENTE` para `PAGO`. Os dados completos do cartão não passam pela aplicação.
 
-- escolher e integrar um provedor;
-- criar cobrança somente no backend;
-- aplicar idempotência no provedor;
-- validar assinatura e origem de webhooks;
+A integração fica desativada por padrão com `INFINITEPAY_ENABLED=false`. Enquanto estiver desativada, nenhum link ou cobrança é criado.
+
+### Configurar e homologar
+
+- habilitar o Checkout Integrado na conta InfinitePay;
+- confirmar a InfiniteTag (`handle`) sem o caractere `$`;
+- configurar URLs públicas HTTPS de retorno e webhook;
+- confirmar com a InfinitePay se a conta recebeu alguma credencial adicional não descrita na documentação pública;
+- ativar `INFINITEPAY_ENABLED=true` somente no ambiente de homologação;
+- testar Pix e cartão com valores controlados;
 - tratar aprovação, recusa, expiração, estorno e reembolso;
-- impedir mudança de pagamento pelo navegador;
 - conciliar cobranças pendentes;
-- nunca armazenar dados completos do cartão.
+- definir operação para indisponibilidade e reprocessamento de webhooks.
 
-O frontend deixou de emitir `CHARGE_CREATED` apenas porque o pedido foi salvo. O evento deverá voltar somente quando existir cobrança real.
+Consulte `INFINITEPAY_CONFIGURACAO.md` para variáveis, ativação e testes. Não armazenar credenciais no repositório.
 
-### Como testar depois
+### Como testar
 
-Pagamento aprovado, recusado e expirado; webhook inválido, duplicado e fora de ordem; falha de rede; estorno; valor cobrado igual ao total do backend; confirmação depois da expiração da reserva.
+Pagamento aprovado, recusado e expirado; Pix e cartão; webhook inválido, duplicado e fora de ordem; pedido inexistente; valor adulterado; falha no `payment_check`; retorno do navegador sem webhook; estorno; confirmação depois da expiração da reserva; comprovante e baixa correta do estoque.
 
 ## 2. Preços, totais e mass assignment
 
@@ -146,6 +151,8 @@ UUID sozinho e contato incorreto não devem revelar dados. Número e contato cor
 
 Existem quantidades disponível, reservada, vendida e mínima, movimentações, ajuste auditado, reserva transacional, bloqueio pessimista, expiração, liberação, baixa e teste concorrente.
 
+A quantidade disponível é exibida na listagem, na página do produto e na sacola. Produtos sem estoque são omitidos da vitrine pública. Ajustes feitos no painel são persistidos no banco e não retornam ao valor anterior após recarregar.
+
 ```bash
 cd backend
 ./mvnw -Dtest=SecurityAndOrderIntegrationTests test
@@ -161,13 +168,18 @@ Faltam variantes, importação/exportação, alerta em canal real e devolução 
 
 Há cotação no backend, OAuth por `authorization_code`, renovação por `refresh_token`, tokens protegidos, `User-Agent`, sandbox/produção, revalidação da cotação e retirada sem cotação. O fluxo “pronto para retirada” foi corrigido.
 
+Peso, altura, largura e comprimento agora fazem parte do cadastro de cada produto, possuem validação no backend e são usados no payload de cotação. O painel sinaliza produtos ativos com estoque que ainda não possuem configuração física completa.
+
 ### Configurar
 
 Client ID, client secret, redirect URI exata, User-Agent com contato, chave de criptografia, CEP de origem e ambiente. Sandbox e produção são independentes.
 
-### Limitação
+### Limitações
 
-Peso e dimensões ainda são padrão. Cada produto/variante precisa de peso, altura, largura e comprimento reais.
+- os valores físicos reais ainda precisam ser preenchidos para todo o catálogo;
+- variantes ainda não possuem dimensões próprias;
+- o empacotamento de múltiplos produtos ainda depende da composição adotada pelo serviço de frete e precisa ser homologado com pedidos mistos;
+- sandbox e produção possuem autorizações independentes.
 
 ### Como testar
 
@@ -199,6 +211,8 @@ Em várias réplicas, migrar o estado para Redis, gateway ou WAF. CAPTCHA adapta
 **Estado: 🟡 fortalecido**
 
 JWT, BCrypt, ADMIN, cookie `HttpOnly`, `Secure` em produção, `SameSite=Strict`, CSRF, expiração, CORS e bloqueio de login estão implementados. O token não fica no `localStorage`.
+
+O painel possui uma central compacta de avisos expansíveis para estoque, medidas de frete e outras pendências operacionais. O cadastro de produtos também mostra um aviso local quando o frete não está configurado. A tela de configurações informa se a InfinitePay está pronta ou aguardando configuração.
 
 Faltam 2FA, troca/recuperação de senha, gestão de admins, revogação/lista de sessões, renovação controlada e alertas de acesso.
 
@@ -277,7 +291,7 @@ Há página, categorias, aceitar/rejeitar/revogar, versão e analytics condicion
 
 **Estado: 🟡 artefatos prontos**
 
-Existem `ops/backup-postgres.sh`, restauração e `POLITICA_BACKUP_INCIDENTES.md`. Falta agendar, criptografar, copiar para fora, monitorar, testar restauração, definir responsáveis e formalizar incidentes.
+Existem scripts de backup e restauração em `ops/`. O documento `POLITICA_BACKUP_INCIDENTES.md` não está presente no estado atual do repositório. Falta restaurar ou recriar a política, agendar, criptografar, copiar para fora, monitorar, testar restauração, definir responsáveis e formalizar incidentes.
 
 Teste restaurando em banco vazio, valide dados/constraints e registre RPO/RTO. Backup sem restauração testada não é válido.
 
@@ -305,21 +319,21 @@ Há `aria-live` e melhorias pontuais. Testar teclado, foco, diálogos, contraste
 
 **Estado: 🟡 backend bem coberto**
 
-Já cobre autenticação, criação segura, adulteração, produto inativo, estoque, concorrência, idempotência, expiração, acompanhamento, rate limiting, CORS, headers, payload, frete, status e health.
+Já cobre autenticação, criação segura, adulteração, produto inativo, estoque, persistência de ajuste manual, concorrência, idempotência, expiração, acompanhamento, rate limiting, CORS, headers, payload, frete, status, health e comportamento seguro da InfinitePay enquanto desativada.
 
-Faltam frontend unitário, Playwright/Cypress, axe, contrato, PostgreSQL/Testcontainers, pagamento/webhooks, cancelamento/reembolso, Melhor Envio controlado e smoke pós-deploy.
+Faltam frontend unitário, Playwright/Cypress, axe, contrato, PostgreSQL/Testcontainers, testes automatizados do provedor e webhooks, cancelamento/reembolso, Melhor Envio controlado e smoke pós-deploy.
 
 ## 24. CI/CD
 
 **Estado: ✅ CI; 🟡 deploy**
 
-`.github/workflows/ci.yml` executa testes, lint, TypeScript, build, auditoria de produção, detecção de segredos e imagens. Faltam provedor, ambientes, deploy aprovado, migrações, smoke e rollback ensaiado.
+`.github/workflows/ci.yml` executa testes, lint, TypeScript, build, auditoria de produção, detecção de segredos e construção das imagens. O backend passou a usar Maven oficial no job e na imagem Docker, eliminando a dependência incorreta de um `mvnw` inexistente no contexto da imagem. Faltam provedor, ambientes, deploy aprovado, migrações, smoke e rollback ensaiado.
 
 ## 25. Observabilidade
 
 **Estado: 🟡 instrumentação**
 
-Há correlação, Actuator, Prometheus, HTTP/JVM/banco, latência do Melhor Envio, pedidos presos, `ops/prometheus-alerts.yml` e `OBSERVABILIDADE_E_CI.md`.
+Há correlação, Actuator, Prometheus, métricas HTTP/JVM/banco, latência do Melhor Envio, pedidos presos e `ops/prometheus-alerts.yml`. O documento `OBSERVABILIDADE_E_CI.md` não está presente no estado atual do repositório.
 
 Faltam coletor, dashboards, logs centralizados, uptime, canal de alertas, erros frontend, alertas de backup/webhooks e SLOs.
 
@@ -333,9 +347,9 @@ Há eventos consentidos para produto, sacola, checkout, entrega, frete, pagament
 
 ### P0 — antes de vendas reais
 
-- [ ] pagamento, webhooks, estorno e conciliação;
+- [ ] configurar e homologar InfinitePay, incluindo Pix, cartão, webhooks, estorno e conciliação;
 - [ ] dados empresariais e documentos legais reais;
-- [ ] peso/dimensões e homologação do Melhor Envio;
+- [ ] cadastrar medidas reais de todo o catálogo e homologar o Melhor Envio;
 - [ ] domínio, HTTPS, segredos e banco privado;
 - [ ] backup externo restaurado;
 - [ ] monitoramento e alertas;
@@ -387,12 +401,11 @@ Há eventos consentidos para produto, sacola, checkout, entrega, frete, pagament
 - `backend/src/test/`
 - `frontend/src/routes/checkout.tsx`
 - `frontend/src/lib/store.ts`
-- `frontend/src/routes/produtos.$slug.tsx`
+- `frontend/src/routes/produtos_.$slug.tsx`
 - `.github/workflows/ci.yml`
+- `INFINITEPAY_CONFIGURACAO.md`
 - `ops/backup-postgres.sh`
 - `ops/prometheus-alerts.yml`
-- `POLITICA_BACKUP_INCIDENTES.md`
-- `OBSERVABILIDADE_E_CI.md`
 
 ## Referências
 
@@ -404,3 +417,4 @@ Há eventos consentidos para produto, sacola, checkout, entrega, frete, pagament
 - Google e-commerce: <https://developers.google.com/search/docs/specialty/ecommerce/how-to-launch-an-ecommerce-website>
 - Baymard: <https://baymard.com/blog/ecommerce-checkout-usability-report-and-benchmark>
 - Melhor Envio: <https://docs.melhorenvio.com.br/>
+- InfinitePay: <https://www.infinitepay.io/checkout-documentacao>
