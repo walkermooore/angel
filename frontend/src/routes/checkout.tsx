@@ -12,6 +12,10 @@ import { QrCode, CreditCard, FileText, ShieldCheck, MapPin, Mail, Store, Truck, 
 import { trackFunnel } from "@/lib/funnel";
 import { createInfinitePayCheckout, getInfinitePayStatus } from "@/lib/api";
 
+type CheckoutField = "customerName" | "email" | "phone" | "cep" | "street" | "number"
+  | "neighborhood" | "city" | "state" | "shipping" | "terms";
+type FieldErrors = Partial<Record<CheckoutField, string>>;
+
 export const Route = createFileRoute("/checkout")({
   head: () => ({ meta: [{ title: "Checkout — Angell" }, { name: "robots", content: "noindex" }] }),
   component: CheckoutPage,
@@ -50,6 +54,7 @@ function CheckoutPage() {
   const [reviewing, setReviewing] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [formError, setFormError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const reviewRef = useRef<HTMLDivElement>(null);
   const [idempotencyKey] = useState(() => crypto.randomUUID());
   const [quotes, setQuotes] = useState<ShippingQuote[]>([]);
@@ -58,6 +63,40 @@ function CheckoutPage() {
   const [infinitePayEnabled, setInfinitePayEnabled] = useState(false);
   const selectedQuote = quotes.find((quote) => quote.id === selectedQuoteId);
   const effectiveShipping = shippingOption === "retirada" ? 0 : selectedQuote?.price ?? 0;
+
+  const clearFieldError = (field: CheckoutField) => {
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const focusFirstError = (errors: FieldErrors) => {
+    const first = Object.keys(errors)[0] as CheckoutField | undefined;
+    if (first) setTimeout(() => document.getElementById(`checkout-${first}`)?.focus(), 0);
+  };
+
+  const validateCheckout = (): FieldErrors => {
+    const errors: FieldErrors = {};
+    const name = customerName.trim();
+    if (name.length < 5 || name.split(/\s+/).length < 2) errors.customerName = "Informe seu nome e sobrenome.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim())) {
+      errors.email = "Informe um e-mail válido, como nome@exemplo.com.";
+    }
+    if (phone.replace(/\D/g, "").length < 10) errors.phone = "Informe telefone e DDD.";
+    if (shippingOption === "entrega") {
+      if (cep.replace(/\D/g, "").length !== 8) errors.cep = "Informe os 8 dígitos do CEP.";
+      if (!form.street.trim()) errors.street = "Informe a rua ou logradouro.";
+      if (!form.number.trim()) errors.number = "Informe o número ou “S/N”.";
+      if (!form.neighborhood.trim()) errors.neighborhood = "Informe o bairro.";
+      if (!form.city.trim()) errors.city = "Informe a cidade.";
+      if (!/^[A-Za-z]{2}$/.test(form.state.trim())) errors.state = "Informe a UF com 2 letras.";
+      if (!selectedQuoteId) errors.shipping = "Calcule e selecione uma opção de frete.";
+    }
+    return errors;
+  };
 
   // When switching to Retirar na Loja, auto fill pickup address
   useEffect(() => {
@@ -104,6 +143,9 @@ function CheckoutPage() {
               state: data.uf || prev.state,
             }));
             toast.success("Endereço preenchido automaticamente pelo CEP!");
+          } else {
+            setFieldErrors((current) => ({ ...current, cep: "CEP não encontrado. Confira os 8 dígitos." }));
+            focusFirstError({ cep: "CEP não encontrado. Confira os 8 dígitos." });
           }
         })
         .catch(() => {
@@ -121,9 +163,13 @@ function CheckoutPage() {
   const handleCalculateFreight = async () => {
     const cleanCep = cep.replace(/\D/g, "");
     if (cleanCep.length !== 8) {
-      toast.error("Informe um CEP válido com 8 dígitos.");
+      const errors = { cep: "Informe um CEP válido com 8 dígitos." };
+      setFieldErrors((current) => ({ ...current, ...errors }));
+      focusFirstError(errors);
       return;
     }
+    clearFieldError("cep");
+    clearFieldError("shipping");
     setCalculatingFreight(true);
     try {
       const result = await calculateMelhorEnvioFreight({
@@ -134,7 +180,10 @@ function CheckoutPage() {
       trackFunnel("FREIGHT_CALCULATED", result.length > 0 ? "success" : "empty");
       setSelectedQuoteId(result[0]?.id || "");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível calcular o frete.");
+      const message = error instanceof Error ? error.message : "Não foi possível calcular o frete.";
+      setFieldErrors((current) => ({ ...current, shipping: message }));
+      focusFirstError({ shipping: message });
+      toast.error(message);
     } finally {
       setCalculatingFreight(false);
     }
@@ -148,32 +197,16 @@ function CheckoutPage() {
       setFormError("Sua sacola está vazia.");
       return;
     }
-    if (customerName.trim().length < 3) {
-      trackFunnel("FORM_ERROR", "customer_name");
-      setFormError("Informe seu nome completo.");
-      return;
-    }
-    if (!customerEmail || !customerEmail.includes("@")) {
-      trackFunnel("FORM_ERROR", "email");
-      setFormError("Informe um e-mail válido.");
-      return;
-    }
     const cleanPhone = phone.replace(/\D/g, "");
-    if (cleanPhone.length < 10) {
-      trackFunnel("FORM_ERROR", "phone");
-      setFormError("Informe um telefone com DDD válido.");
+    const errors = validateCheckout();
+    if (Object.keys(errors).length > 0) {
+      trackFunnel("FORM_ERROR", Object.keys(errors)[0]);
+      setFieldErrors(errors);
+      setFormError("Confira os campos destacados antes de continuar.");
+      focusFirstError(errors);
       return;
     }
-    if (shippingOption === "entrega" && (!form.street || !form.number || !form.neighborhood || !form.city || !form.state)) {
-      trackFunnel("FORM_ERROR", "address");
-      setFormError("Preencha o endereço de entrega completo.");
-      return;
-    }
-    if (shippingOption === "entrega" && !selectedQuoteId) {
-      trackFunnel("FORM_ERROR", "shipping");
-      setFormError("Calcule e selecione uma opção de frete.");
-      return;
-    }
+    setFieldErrors({});
     if (!reviewing) {
       setReviewing(true);
       setTimeout(() => reviewRef.current?.focus(), 0);
@@ -181,7 +214,10 @@ function CheckoutPage() {
     }
     if (!acceptedTerms) {
       trackFunnel("FORM_ERROR", "terms");
-      setFormError("Confirme que revisou o pedido e aceita as políticas aplicáveis.");
+      const termsError = { terms: "Confirme que revisou o pedido e aceita as políticas aplicáveis." };
+      setFieldErrors(termsError);
+      setFormError("É necessário aceitar os termos para finalizar.");
+      focusFirstError(termsError);
       return;
     }
 
@@ -242,7 +278,7 @@ function CheckoutPage() {
     <div className="mx-auto max-w-6xl px-5 sm:px-8 py-10 sm:py-16">
       <h1 className="font-display text-4xl sm:text-5xl mb-10">Finalizar pedido</h1>
 
-      <form onSubmit={handleSubmit} className="grid lg:grid-cols-[1fr_380px] gap-10">
+      <form noValidate onSubmit={handleSubmit} className="grid lg:grid-cols-[1fr_380px] gap-10">
         <div className="space-y-10">
           {formError && (
             <div role="alert" aria-live="assertive" tabIndex={-1} className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
@@ -268,12 +304,16 @@ function CheckoutPage() {
               <label className="flex items-start gap-3 text-sm cursor-pointer">
                 <input
                   type="checkbox"
+                  id="checkout-terms"
                   checked={acceptedTerms}
-                  onChange={(event) => setAcceptedTerms(event.target.checked)}
+                  onChange={(event) => { setAcceptedTerms(event.target.checked); clearFieldError("terms"); }}
+                  aria-invalid={Boolean(fieldErrors.terms)}
+                  aria-describedby={fieldErrors.terms ? "checkout-terms-error" : undefined}
                   className="mt-1"
                 />
                 <span>Revisei os dados, produtos, valores, entrega e pagamento e concordo com as políticas e termos aplicáveis.</span>
               </label>
+              {fieldErrors.terms && <p id="checkout-terms-error" className="text-xs text-destructive">{fieldErrors.terms}</p>}
             </section>
           )}
           {/* Opção de Envio / Retirar na Loja */}
@@ -309,36 +349,48 @@ function CheckoutPage() {
             </h2>
             <div className="grid sm:grid-cols-3 gap-4">
               <div>
-                <Label className="text-xs uppercase tracking-widest">Seu Nome</Label>
+                <Label htmlFor="checkout-customerName" className="text-xs uppercase tracking-widest">Seu Nome</Label>
                 <Input
+                  id="checkout-customerName"
                   value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
+                  onChange={(e) => { setCustomerName(e.target.value); clearFieldError("customerName"); }}
                   placeholder="Nome completo"
                   className="h-11 mt-1.5"
                   required
+                  aria-invalid={Boolean(fieldErrors.customerName)}
+                  aria-describedby={fieldErrors.customerName ? "checkout-customerName-error" : undefined}
                 />
+                {fieldErrors.customerName && <p id="checkout-customerName-error" className="text-xs text-destructive mt-1">{fieldErrors.customerName}</p>}
               </div>
               <div>
-                <Label className="text-xs uppercase tracking-widest">Seu E-mail</Label>
+                <Label htmlFor="checkout-email" className="text-xs uppercase tracking-widest">Seu E-mail</Label>
                 <Input
+                  id="checkout-email"
                   type="email"
                   value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  onChange={(e) => { setCustomerEmail(e.target.value); clearFieldError("email"); }}
                   placeholder="seuemail@exemplo.com"
                   className="h-11 mt-1.5"
                   required
+                  aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={fieldErrors.email ? "checkout-email-error" : undefined}
                 />
+                {fieldErrors.email && <p id="checkout-email-error" className="text-xs text-destructive mt-1">{fieldErrors.email}</p>}
               </div>
               <div>
-                <Label className="text-xs uppercase tracking-widest">Telefone / WhatsApp</Label>
+                <Label htmlFor="checkout-phone" className="text-xs uppercase tracking-widest">Telefone / WhatsApp</Label>
                 <Input
+                  id="checkout-phone"
                   type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => { setPhone(e.target.value); clearFieldError("phone"); }}
                   placeholder="(65) 99999-9999"
                   className="h-11 mt-1.5"
                   required
+                  aria-invalid={Boolean(fieldErrors.phone)}
+                  aria-describedby={fieldErrors.phone ? "checkout-phone-error" : undefined}
                 />
+                {fieldErrors.phone && <p id="checkout-phone-error" className="text-xs text-destructive mt-1">{fieldErrors.phone}</p>}
               </div>
             </div>
             <p className="mt-3 text-[11px] text-muted-foreground">
@@ -355,39 +407,51 @@ function CheckoutPage() {
 
               <div className="grid sm:grid-cols-3 gap-4">
                 <div>
-                  <Label className="text-xs uppercase tracking-widest">CEP</Label>
+                  <Label htmlFor="checkout-cep" className="text-xs uppercase tracking-widest">CEP</Label>
                   <Input
+                    id="checkout-cep"
                     value={cep}
-                    onChange={(e) => setCep(e.target.value)}
+                    onChange={(e) => { setCep(e.target.value); clearFieldError("cep"); clearFieldError("shipping"); }}
                     placeholder="78000-000"
                     maxLength={9}
                     className="h-11 mt-1.5"
                     required
+                    aria-invalid={Boolean(fieldErrors.cep)}
+                    aria-describedby={fieldErrors.cep ? "checkout-cep-error" : undefined}
                   />
+                  {fieldErrors.cep && <p id="checkout-cep-error" className="text-xs text-destructive mt-1">{fieldErrors.cep}</p>}
                   {loadingCep && <p className="text-[10px] text-muted-foreground mt-1 animate-pulse">Buscando CEP...</p>}
                 </div>
                 <div className="sm:col-span-2">
-                  <Label className="text-xs uppercase tracking-widest">Rua / Logradouro</Label>
+                  <Label htmlFor="checkout-street" className="text-xs uppercase tracking-widest">Rua / Logradouro</Label>
                   <Input
+                    id="checkout-street"
                     value={form.street}
-                    onChange={(e) => setForm({ ...form, street: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, street: e.target.value }); clearFieldError("street"); }}
                     placeholder="Av. Getúlio Vargas"
                     className="h-11 mt-1.5"
                     required
+                    aria-invalid={Boolean(fieldErrors.street)}
+                    aria-describedby={fieldErrors.street ? "checkout-street-error" : undefined}
                   />
+                  {fieldErrors.street && <p id="checkout-street-error" className="text-xs text-destructive mt-1">{fieldErrors.street}</p>}
                 </div>
               </div>
 
               <div className="grid sm:grid-cols-3 gap-4">
                 <div>
-                  <Label className="text-xs uppercase tracking-widest">Número</Label>
+                  <Label htmlFor="checkout-number" className="text-xs uppercase tracking-widest">Número</Label>
                   <Input
+                    id="checkout-number"
                     value={form.number}
-                    onChange={(e) => setForm({ ...form, number: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, number: e.target.value }); clearFieldError("number"); }}
                     placeholder="123"
                     className="h-11 mt-1.5"
                     required
+                    aria-invalid={Boolean(fieldErrors.number)}
+                    aria-describedby={fieldErrors.number ? "checkout-number-error" : undefined}
                   />
+                  {fieldErrors.number && <p id="checkout-number-error" className="text-xs text-destructive mt-1">{fieldErrors.number}</p>}
                 </div>
                 <div className="sm:col-span-2">
                   <Label className="text-xs uppercase tracking-widest">Complemento (opcional)</Label>
@@ -402,39 +466,57 @@ function CheckoutPage() {
 
               <div className="grid sm:grid-cols-3 gap-4">
                 <div>
-                  <Label className="text-xs uppercase tracking-widest">Bairro</Label>
+                  <Label htmlFor="checkout-neighborhood" className="text-xs uppercase tracking-widest">Bairro</Label>
                   <Input
+                    id="checkout-neighborhood"
                     value={form.neighborhood}
-                    onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, neighborhood: e.target.value }); clearFieldError("neighborhood"); }}
                     placeholder="Centro"
                     className="h-11 mt-1.5"
                     required
+                    aria-invalid={Boolean(fieldErrors.neighborhood)}
+                    aria-describedby={fieldErrors.neighborhood ? "checkout-neighborhood-error" : undefined}
                   />
+                  {fieldErrors.neighborhood && <p id="checkout-neighborhood-error" className="text-xs text-destructive mt-1">{fieldErrors.neighborhood}</p>}
                 </div>
                 <div>
-                  <Label className="text-xs uppercase tracking-widest">Cidade</Label>
+                  <Label htmlFor="checkout-city" className="text-xs uppercase tracking-widest">Cidade</Label>
                   <Input
+                    id="checkout-city"
                     value={form.city}
-                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, city: e.target.value }); clearFieldError("city"); }}
                     placeholder="Cuiabá"
                     className="h-11 mt-1.5"
                     required
+                    aria-invalid={Boolean(fieldErrors.city)}
+                    aria-describedby={fieldErrors.city ? "checkout-city-error" : undefined}
                   />
+                  {fieldErrors.city && <p id="checkout-city-error" className="text-xs text-destructive mt-1">{fieldErrors.city}</p>}
                 </div>
                 <div>
-                  <Label className="text-xs uppercase tracking-widest">UF</Label>
+                  <Label htmlFor="checkout-state" className="text-xs uppercase tracking-widest">UF</Label>
                   <Input
+                    id="checkout-state"
                     value={form.state}
-                    onChange={(e) => setForm({ ...form, state: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, state: e.target.value.toUpperCase() }); clearFieldError("state"); }}
                     placeholder="MT"
                     maxLength={2}
                     className="h-11 mt-1.5 uppercase"
                     required
+                    aria-invalid={Boolean(fieldErrors.state)}
+                    aria-describedby={fieldErrors.state ? "checkout-state-error" : undefined}
                   />
+                  {fieldErrors.state && <p id="checkout-state-error" className="text-xs text-destructive mt-1">{fieldErrors.state}</p>}
                 </div>
               </div>
 
-              <div className="space-y-3 rounded-xl border border-border p-4">
+              <div
+                id="checkout-shipping"
+                tabIndex={-1}
+                aria-invalid={Boolean(fieldErrors.shipping)}
+                aria-describedby={fieldErrors.shipping ? "checkout-shipping-error" : undefined}
+                className={`space-y-3 rounded-xl border p-4 ${fieldErrors.shipping ? "border-destructive" : "border-border"}`}
+              >
                 <Button
                   type="button"
                   variant="outline"
@@ -451,7 +533,7 @@ function CheckoutPage() {
                     <button
                       type="button"
                       key={quote.id}
-                      onClick={() => setSelectedQuoteId(quote.id)}
+                      onClick={() => { setSelectedQuoteId(quote.id); clearFieldError("shipping"); }}
                       className={`w-full rounded-lg border p-3 text-left flex items-center justify-between ${
                         selected ? "border-primary bg-primary/10" : "border-border"
                       }`}
@@ -469,6 +551,7 @@ function CheckoutPage() {
                     </button>
                   );
                 })}
+                {fieldErrors.shipping && <p id="checkout-shipping-error" className="text-xs text-destructive">{fieldErrors.shipping}</p>}
               </div>
             </section>
           )}

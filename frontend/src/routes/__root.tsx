@@ -122,7 +122,7 @@ function RootShell({ children }: { children: ReactNode }) {
     inLanguage: "pt-BR",
   };
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
