@@ -41,6 +41,8 @@ dist-ssr
 backend/.jdk/
 backend/target/
 backend/data/
+frontend/test-results/
+frontend/playwright-report/
 backend/.mvn/
 backend/mvnw
 backend/mvnw.cmd

@@ -47,6 +47,14 @@ jobs:
           VITE_API_URL: http://localhost:8081/api
           VITE_SITE_URL: https://example.invalid
         run: npm run build
+      - name: Instalar navegador E2E
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Checkout E2E
+        working-directory: frontend
+        env:
+          VITE_API_URL: http://localhost:8081/api
+        run: npm run test:e2e
       - name: Auditoria de dependências
         working-directory: frontend
         run: npm audit --omit=dev --audit-level=high
