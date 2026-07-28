@@ -325,6 +325,39 @@ class SecurityAndOrderIntegrationTests {
     }
 
     @Test
+    void updatesProductStockAndPersistsInventoryMovement() throws Exception {
+        Product product = product("Produto com estoque editável", "90.00", 0, 100);
+
+        mockMvc.perform(put("/api/produtos/{id}", product.getId())
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "name":"Produto com estoque editável",
+                      "description":"Produto de integração",
+                      "price":90.00,
+                      "discountPercent":0,
+                      "discountPrice":90.00,
+                      "category":"prata",
+                      "image":"https://example.test/product.jpg",
+                      "highlighted":false,
+                      "stockQuantity":7,
+                      "minimumStock":3
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.stockQuantity").value(7));
+
+        Product saved = productRepository.findById(product.getId()).orElseThrow();
+        assertThat(saved.getStockQuantity()).isEqualTo(7);
+        assertThat(inventoryMovementRepository.findByProductIdOrderByCreatedAtDesc(product.getId()))
+            .anySatisfy(movement -> {
+                assertThat(movement.getMovementType()).isEqualTo("ADJUSTMENT");
+                assertThat(movement.getQuantity()).isEqualTo(-93);
+            });
+    }
+
+    @Test
     void updatesAndReadsInstitutionalPolicies() throws Exception {
         mockMvc.perform(put("/api/paginas-institucionais")
                 .header("Authorization", "Bearer " + token)
