@@ -45,6 +45,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout", "/api/pedidos", "/api/frete/cotacoes",
                     "/api/pedidos/acompanhar", "/api/metricas/funil",
+                    "/api/pos-venda", "/api/pos-venda/anexos",
                     "/api/pagamentos/infinitepay/checkout", "/api/pagamentos/infinitepay/webhook").permitAll()
                 .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers(HttpMethod.GET,
@@ -52,6 +53,7 @@ public class SecurityConfig {
                     "/api/home-settings", "/api/sobre-nos", "/api/paginas-institucionais"
                 ).permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/produtos/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/pos-venda/acompanhar").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/media/images/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/pagamentos/infinitepay/status").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/frete/oauth/callback").permitAll()

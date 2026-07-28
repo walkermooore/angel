@@ -36,7 +36,8 @@ public class AdminCsrfFilter extends OncePerRequestFilter {
     private boolean isPublicMutation(HttpServletRequest request) {
         String path = request.getRequestURI();
         return path.endsWith("/api/auth/login") || path.endsWith("/api/pedidos")
-            || path.endsWith("/api/frete/cotacoes") || path.endsWith("/api/pedidos/acompanhar");
+            || path.endsWith("/api/frete/cotacoes") || path.endsWith("/api/pedidos/acompanhar")
+            || path.endsWith("/api/pos-venda") || path.endsWith("/api/pos-venda/anexos");
     }
 
     private boolean hasCookie(HttpServletRequest request, String name) {

@@ -62,6 +62,8 @@ public class ApiRateLimitFilter extends OncePerRequestFilter {
         if ("POST".equals(method) && path.endsWith("/api/pedidos")) return new Limit("checkout", 20, 3600);
         if ("POST".equals(method) && path.endsWith("/api/frete/cotacoes")) return new Limit("freight", 60, 60);
         if ("POST".equals(method) && path.endsWith("/api/pedidos/acompanhar")) return new Limit("tracking", 10, 600);
+        if ("POST".equals(method) && path.endsWith("/api/pos-venda")) return new Limit("after-sales", 10, 3600);
+        if ("POST".equals(method) && path.endsWith("/api/pos-venda/anexos")) return new Limit("after-sales-upload", 10, 3600);
         if (path.startsWith("/api/") && ("GET".equals(method) || "POST".equals(method))) {
             return new Limit("public-api", 120, 60);
         }

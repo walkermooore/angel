@@ -30,6 +30,7 @@ public class InfinitePayService {
 
     private final PurchaseOrderRepository orderRepository;
     private final AuditLogRepository auditLogRepository;
+    private final TransactionalNotificationService notifications;
     private final InventoryService inventoryService;
     private final RestClient client;
     private final boolean enabled;
@@ -41,6 +42,7 @@ public class InfinitePayService {
         PurchaseOrderRepository orderRepository,
         AuditLogRepository auditLogRepository,
         InventoryService inventoryService,
+        TransactionalNotificationService notifications,
         @Value("${app.infinitepay.base-url:https://api.checkout.infinitepay.io}") String baseUrl,
         @Value("${app.infinitepay.enabled:false}") boolean enabled,
         @Value("${app.infinitepay.handle:}") String handle,
@@ -50,6 +52,7 @@ public class InfinitePayService {
         this.orderRepository = orderRepository;
         this.auditLogRepository = auditLogRepository;
         this.inventoryService = inventoryService;
+        this.notifications = notifications;
         this.client = RestClient.builder().baseUrl(baseUrl).build();
         this.enabled = enabled;
         this.handle = normalizeHandle(handle);
@@ -169,6 +172,8 @@ public class InfinitePayService {
                 "InfinitePay",
                 "Pagamento confirmado pela API da InfinitePay."
             ));
+            notifications.queueOrderEvent(order, "PAYMENT_CONFIRMED",
+                "Pagamento confirmado. O pedido " + order.getNumber() + " está em preparação.");
         }
         orderRepository.save(order);
     }

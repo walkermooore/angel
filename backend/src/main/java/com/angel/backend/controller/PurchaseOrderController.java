@@ -11,6 +11,7 @@ import com.angel.backend.repository.PurchaseOrderRepository;
 import com.angel.backend.service.OrderCheckoutService;
 import com.angel.backend.service.InventoryService;
 import com.angel.backend.service.PublicOrderTrackingService;
+import com.angel.backend.service.TransactionalNotificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -31,19 +32,22 @@ public class PurchaseOrderController {
     private final OrderCheckoutService orderCheckoutService;
     private final InventoryService inventoryService;
     private final PublicOrderTrackingService publicOrderTrackingService;
+    private final TransactionalNotificationService notifications;
 
     public PurchaseOrderController(
         PurchaseOrderRepository purchaseOrderRepository,
         AuditLogRepository auditLogRepository,
         OrderCheckoutService orderCheckoutService,
         InventoryService inventoryService,
-        PublicOrderTrackingService publicOrderTrackingService
+        PublicOrderTrackingService publicOrderTrackingService,
+        TransactionalNotificationService notifications
     ) {
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.auditLogRepository = auditLogRepository;
         this.orderCheckoutService = orderCheckoutService;
         this.inventoryService = inventoryService;
         this.publicOrderTrackingService = publicOrderTrackingService;
+        this.notifications = notifications;
     }
 
     private Optional<PurchaseOrder> findByIdOrNumber(String idOrNumber) {
@@ -102,6 +106,7 @@ public class PurchaseOrderController {
                         "Status alterado de '" + (oldStatus != null ? oldStatus.getDescription() : "Desconhecido") + "' para '" + newStatus.getDescription() + "'"
                     ));
                 } catch (Exception ignored) {}
+                notifications.queueOrderEvent(order, eventType(newStatus), statusMessage(order, newStatus));
             }
             return ResponseEntity.ok(order);
         }).orElse(ResponseEntity.notFound().build());
@@ -122,6 +127,8 @@ public class PurchaseOrderController {
                     "Código de rastreio atualizado para: " + code
                 ));
             } catch (Exception ignored) {}
+            notifications.queueOrderEvent(order, "TRACKING_UPDATED",
+                "O rastreamento do pedido " + order.getNumber() + " foi atualizado.");
             return ResponseEntity.ok(order);
         }).orElse(ResponseEntity.notFound().build());
     }
@@ -129,6 +136,28 @@ public class PurchaseOrderController {
     private Status parseStatus(String str) {
         if (str == null) return Status.PENDENTE;
         return Status.fromValue(str);
+    }
+
+    private String eventType(Status status) {
+        return switch (status) {
+            case PAGO -> "PAYMENT_CONFIRMED";
+            case ENVIADO -> "ORDER_SHIPPED";
+            case PRONTO_PARA_RETIRADA -> "READY_FOR_PICKUP";
+            case CONCLUIDO -> "ORDER_COMPLETED";
+            case CANCELADO -> "ORDER_CANCELLED";
+            default -> "ORDER_UPDATED";
+        };
+    }
+
+    private String statusMessage(PurchaseOrder order, Status status) {
+        return switch (status) {
+            case PAGO -> "Pagamento confirmado. O pedido " + order.getNumber() + " está em preparação.";
+            case ENVIADO -> "O pedido " + order.getNumber() + " foi enviado.";
+            case PRONTO_PARA_RETIRADA -> "O pedido " + order.getNumber() + " está pronto para retirada.";
+            case CONCLUIDO -> "O pedido " + order.getNumber() + " foi concluído.";
+            case CANCELADO -> "O pedido " + order.getNumber() + " foi cancelado.";
+            default -> "O pedido " + order.getNumber() + " foi atualizado.";
+        };
     }
 
     private String clientIp(HttpServletRequest request) {

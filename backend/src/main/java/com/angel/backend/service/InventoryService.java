@@ -27,12 +27,15 @@ public class InventoryService {
     private final ProductRepository productRepository;
     private final PurchaseOrderRepository orderRepository;
     private final InventoryMovementRepository movementRepository;
+    private final TransactionalNotificationService notifications;
 
     public InventoryService(ProductRepository productRepository, PurchaseOrderRepository orderRepository,
-                            InventoryMovementRepository movementRepository) {
+                            InventoryMovementRepository movementRepository,
+                            TransactionalNotificationService notifications) {
         this.productRepository = productRepository;
         this.orderRepository = orderRepository;
         this.movementRepository = movementRepository;
+        this.notifications = notifications;
     }
 
     public void reserve(Product product, int quantity) {
@@ -64,6 +67,8 @@ public class InventoryService {
             release(order, "Sistema", "Pagamento expirado; reserva liberada");
             order.setStatus(Status.CANCELADO);
             orderRepository.save(order);
+            notifications.queueOrderEvent(order, "ORDER_CANCELLED",
+                "O pedido " + order.getNumber() + " foi cancelado porque o prazo de pagamento terminou.");
         }
     }
 
@@ -116,6 +121,19 @@ public class InventoryService {
         movement.setReason(reason);
         movement.setActor(actor);
         movementRepository.save(movement);
+    }
+
+    @Transactional
+    public void returnSoldItems(PurchaseOrder order, String actor) {
+        if (order.getItems() == null || order.getItems().isEmpty()) return;
+        Map<UUID, Product> products = lockedProducts(order);
+        for (OrderItem item : order.getItems()) {
+            Product product = products.get(UUID.fromString(item.getProductId()));
+            int quantity = item.getQuantity();
+            product.setStockQuantity(value(product.getStockQuantity()) + quantity);
+            product.setSoldQuantity(Math.max(0, value(product.getSoldQuantity()) - quantity));
+            movement(product, order, "RETURN", quantity, "Itens devolvidos ao estoque pelo pós-venda", actor);
+        }
     }
 
     private int value(Integer number) {

@@ -42,6 +42,7 @@ public class OrderCheckoutService {
     private final AuditLogRepository auditLogRepository;
     private final MelhorEnvioService melhorEnvioService;
     private final InventoryService inventoryService;
+    private final TransactionalNotificationService notifications;
     private final long reservationMinutes;
 
     public OrderCheckoutService(
@@ -50,6 +51,7 @@ public class OrderCheckoutService {
         AuditLogRepository auditLogRepository,
         MelhorEnvioService melhorEnvioService,
         InventoryService inventoryService,
+        TransactionalNotificationService notifications,
         @Value("${app.inventory.reservation-minutes:30}") long reservationMinutes
     ) {
         this.productRepository = productRepository;
@@ -57,6 +59,7 @@ public class OrderCheckoutService {
         this.auditLogRepository = auditLogRepository;
         this.melhorEnvioService = melhorEnvioService;
         this.inventoryService = inventoryService;
+        this.notifications = notifications;
         this.reservationMinutes = reservationMinutes;
     }
 
@@ -144,6 +147,8 @@ public class OrderCheckoutService {
             "Cliente",
             "Pedido criado com valores recalculados pelo servidor. Total: R$ " + saved.getTotal()
         ));
+        notifications.queueOrderEvent(saved, "ORDER_CREATED",
+            "Recebemos o pedido " + saved.getNumber() + ". Aguardamos a confirmação do pagamento.");
         return saved;
     }
 
