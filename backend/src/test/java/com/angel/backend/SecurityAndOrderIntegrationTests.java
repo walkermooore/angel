@@ -6,6 +6,8 @@ import com.angel.backend.model.Product;
 import com.angel.backend.repository.ProductRepository;
 import com.angel.backend.repository.PurchaseOrderRepository;
 import com.angel.backend.repository.InventoryMovementRepository;
+import com.angel.backend.repository.NotificationOutboxRepository;
+import com.angel.backend.repository.AfterSalesRequestRepository;
 import com.angel.backend.service.InventoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,12 +56,20 @@ class SecurityAndOrderIntegrationTests {
     private InventoryMovementRepository inventoryMovementRepository;
 
     @Autowired
+    private NotificationOutboxRepository notificationOutboxRepository;
+
+    @Autowired
+    private AfterSalesRequestRepository afterSalesRequestRepository;
+
+    @Autowired
     private InventoryService inventoryService;
 
     private String token;
 
     @BeforeEach
     void authenticate() throws Exception {
+        afterSalesRequestRepository.deleteAll();
+        notificationOutboxRepository.deleteAll();
         inventoryMovementRepository.deleteAll();
         purchaseOrderRepository.deleteAll();
         productRepository.deleteAll();
@@ -77,6 +87,73 @@ class SecurityAndOrderIntegrationTests {
             .filter(value -> value.startsWith("ADMIN_SESSION="))
             .findFirst().orElseThrow();
         token = sessionCookie.substring("ADMIN_SESSION=".length(), sessionCookie.indexOf(';'));
+    }
+
+    @Test
+    void createsTracksAndApprovesCancellationWithNotificationsAndInventoryRelease() throws Exception {
+        Product product = product("Produto pós-venda", "120.00", 0, 2);
+        String orderJson = mockMvc.perform(post("/api/pedidos")
+                .header("Idempotency-Key", "after-sales-test-000000000001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "customerName":"Cliente Pós Venda",
+                      "email":"posvenda@angel.test",
+                      "phone":"65999997777",
+                      "items":[{"productId":"%s","quantity":1}],
+                      "shippingOption":"retirada",
+                      "shippingQuoteId":"PICKUP",
+                      "payment":"PIX",
+                      "address":{}
+                    }
+                    """.formatted(product.getId())))
+            .andExpect(status().isCreated())
+            .andReturn().getResponse().getContentAsString();
+        var orderNode = tools.jackson.databind.json.JsonMapper.builder().build().readTree(orderJson);
+        String orderNumber = orderNode.path("number").asText();
+
+        String requestJson = mockMvc.perform(post("/api/pos-venda")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "orderNumber":"%s",
+                      "contact":"posvenda@angel.test",
+                      "requestType":"CANCELAMENTO",
+                      "reason":"Compra duplicada",
+                      "details":"Solicito o cancelamento.",
+                      "attachmentUrls":[]
+                    }
+                    """.formatted(orderNumber)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.protocol").value(org.hamcrest.Matchers.startsWith("POS-")))
+            .andExpect(jsonPath("$.status").value("RECEBIDA"))
+            .andReturn().getResponse().getContentAsString();
+        var requestNode = tools.jackson.databind.json.JsonMapper.builder().build().readTree(requestJson);
+        String protocol = requestNode.path("protocol").asText();
+        String accessToken = requestNode.path("accessToken").asText();
+        String requestId = requestNode.path("id").asText();
+
+        mockMvc.perform(get("/api/pos-venda/acompanhar")
+                .param("protocol", protocol)
+                .param("token", accessToken))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.reason").value("Compra duplicada"));
+        mockMvc.perform(get("/api/pos-venda")).andExpect(status().isUnauthorized());
+
+        mockMvc.perform(patch("/api/pos-venda/{id}", requestId)
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"status":"APROVADA","refundStatus":"PENDING","adminNote":"Cancelamento aprovado."}
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.refundStatus").value("PENDING"));
+
+        PurchaseOrder cancelled = purchaseOrderRepository.findByNumber(orderNumber).orElseThrow();
+        Product released = productRepository.findById(product.getId()).orElseThrow();
+        assertThat(cancelled.getStatus()).isEqualTo(Status.CANCELADO);
+        assertThat(released.getReservedQuantity()).isZero();
+        assertThat(notificationOutboxRepository.count()).isEqualTo(6);
     }
 
     @Test
