@@ -13,6 +13,8 @@ import org.springframework.web.client.RestClientResponseException;
 import tools.jackson.databind.JsonNode;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 public class MelhorEnvioService {
 
     private static final BigDecimal FREE_SHIPPING_THRESHOLD = new BigDecimal("250.00");
+    private static final Logger log = LoggerFactory.getLogger(MelhorEnvioService.class);
 
     private final ProductRepository productRepository;
     private final RestClient client;
@@ -193,8 +196,9 @@ public class MelhorEnvioService {
             || product.getHeight() == null || product.getHeight() <= 0
             || product.getWidth() == null || product.getWidth() <= 0
             || product.getLength() == null || product.getLength() <= 0) {
+            log.warn("Cotação bloqueada: produto {} sem peso ou dimensões válidas", product.getId());
             throw new CheckoutException(HttpStatus.UNPROCESSABLE_ENTITY,
-                "O produto " + product.getName() + " ainda não possui peso e dimensões para calcular o frete.");
+                "Não foi possível calcular o frete para os produtos selecionados. Escolha a retirada na loja ou entre em contato conosco.");
         }
     }
 
