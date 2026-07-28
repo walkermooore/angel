@@ -12,35 +12,10 @@ export interface AuditLog {
 
 const AUDIT_KEY = "angel:audit_logs";
 
-const seedLogs: AuditLog[] = [
-  {
-    id: "log-1",
-    timestamp: new Date(Date.now() - 3600000 * 3).toISOString(),
-    orderNumber: "ANG-20260723-9482",
-    action: "Criação de Pedido",
-    user: "Cliente (Checkout)",
-    details: "Pedido gerado via PIX com 2 itens (Total: R$ 349,10)",
-  },
-  {
-    id: "log-2",
-    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-    orderNumber: "ANG-20260723-9482",
-    action: "Status Alterado",
-    user: "admin@example.invalid",
-    details: "Status atualizado para 'Pago' após verificação de pagamento",
-  },
-];
+const emptyLogs: AuditLog[] = [];
 
 function loadAuditLogs(): AuditLog[] {
-  if (typeof window === "undefined") return seedLogs;
-  try {
-    const raw = localStorage.getItem(AUDIT_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {}
-  return seedLogs;
+  return emptyLogs;
 }
 
 type Listener = () => void;
@@ -54,7 +29,7 @@ function emit() {
 // Sync with backend API
 if (typeof window !== "undefined") {
   getAuditLogsFromBackend().then((remoteLogs) => {
-    if (remoteLogs && Array.isArray(remoteLogs) && remoteLogs.length > 0) {
+    if (Array.isArray(remoteLogs)) {
       state = remoteLogs;
       emit();
     }
@@ -77,7 +52,7 @@ export const auditStore = {
 };
 
 export function useAuditLogs(): AuditLog[] {
-  return useSyncExternalStore(auditStore.subscribe, auditStore.get, () => seedLogs);
+  return useSyncExternalStore(auditStore.subscribe, auditStore.get, () => emptyLogs);
 }
 
 export const auditApi = {

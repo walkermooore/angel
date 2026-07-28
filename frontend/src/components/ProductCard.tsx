@@ -22,12 +22,18 @@ export function ProductCard({ product }: { product: Product }) {
           className="absolute inset-0 text-left cursor-pointer"
           aria-label={`Ver detalhes de ${product.name}`}
         >
-          <img
-            src={product.image}
-            alt={product.name}
-            loading="eager"
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
+          {product.image ? (
+            <img
+              src={product.image}
+              alt={product.name}
+              loading="eager"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+          ) : (
+            <span className="flex h-full items-center justify-center px-4 text-center text-xs text-muted-foreground">
+              Imagem indisponível
+            </span>
+          )}
           {hasDiscount && (
             <span className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-foreground text-background shadow">
               {product.discountPercent}% OFF

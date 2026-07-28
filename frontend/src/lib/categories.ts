@@ -4,15 +4,10 @@ import { getCategoriesFromBackend, createCategoryInBackend, deleteCategoryFromBa
 export type Category = "prata" | "cosmeticos" | string;
 
 const KEY = "angel:categories";
-const DEFAULT_CATEGORIES: Category[] = ["prata", "cosmeticos"];
+const EMPTY_CATEGORIES: Category[] = [];
 
 function loadCategories(): Category[] {
-  if (typeof window === "undefined") return DEFAULT_CATEGORIES;
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return DEFAULT_CATEGORIES;
+  return EMPTY_CATEGORIES;
 }
 
 function createStore<T>(key: string, initial: () => T) {
@@ -34,14 +29,20 @@ const store = createStore<Category[]>(KEY, loadCategories);
 
 if (typeof window !== "undefined") {
   getCategoriesFromBackend().then((remoteCats) => {
-    if (remoteCats && Array.isArray(remoteCats) && remoteCats.length > 0) {
-      store.set(remoteCats.map((c: any) => c.name || c));
-    }
+    if (Array.isArray(remoteCats)) setCategoriesFromBackend(remoteCats);
   });
 }
 
+export function mapCategoriesFromBackend(remoteCats: any[]): Category[] {
+  return remoteCats.map((category: any) => category.name || category);
+}
+
+export function setCategoriesFromBackend(remoteCats: any[]) {
+  store.set(mapCategoriesFromBackend(remoteCats));
+}
+
 export function useCategories(): Category[] {
-  return useSyncExternalStore(store.subscribe, store.get, () => DEFAULT_CATEGORIES);
+  return useSyncExternalStore(store.subscribe, store.get, () => EMPTY_CATEGORIES);
 }
 
 export const categoriesApi = {

@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { products as seedProducts, type Product } from "./products";
+import { type Product } from "./products";
 import { auditApi } from "./auditStore";
 import {
   getProductsFromBackend,
@@ -63,55 +63,15 @@ export interface CreateOrderInput {
 
 const PRODUCTS_KEY = "angel:products";
 const ORDERS_KEY = "angel:orders";
-
-const developmentSeedOrders: Order[] = [
-  {
-    id: "ord-1",
-    number: "ANG-20260723-9482",
-    email: "contato@example.invalid",
-    createdAt: new Date().toISOString(),
-    items: [
-      { productId: "1", name: "Colar Éclat Prata 925", price: 170.1, quantity: 1, image: seedProducts[0]?.image || "" },
-      { productId: "4", name: "Sérum Radiance Angell", price: 179, quantity: 1, image: seedProducts[3]?.image || "" },
-    ],
-    subtotal: 349.1,
-    shipping: 0,
-    total: 349.1,
-    status: "Pago",
-    shippingOption: "retirada",
-    trackingCode: "",
-    payment: "PIX",
-    address: {
-      cep: "78000-000",
-      street: "Retirada na loja física",
-      number: "500",
-      neighborhood: "Centro",
-      city: "Cuiabá",
-      state: "MT",
-    },
-  },
-];
-const seedOrders: Order[] = import.meta.env.PROD ? [] : developmentSeedOrders;
+const EMPTY_PRODUCTS: Product[] = [];
+const EMPTY_ORDERS: Order[] = [];
 
 function loadProducts(): Product[] {
-  if (typeof window === "undefined") return seedProducts;
-  try {
-    const raw = localStorage.getItem(PRODUCTS_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return seedProducts;
+  return EMPTY_PRODUCTS;
 }
 
 function loadOrders(): Order[] {
-  if (typeof window === "undefined") return seedOrders;
-  try {
-    const raw = localStorage.getItem(ORDERS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch {}
-  return seedOrders;
+  return EMPTY_ORDERS;
 }
 
 type Listener = () => void;
@@ -168,7 +128,7 @@ export function mapOrderFromBackend(o: any): Order {
         name: i.name || matchedProd?.name || "",
         price: Number(i.price || matchedProd?.price || 0),
         quantity: Number(i.quantity || 1),
-        image: i.image || matchedProd?.image || seedProducts[0]?.image || "",
+        image: i.image || matchedProd?.image || "",
       };
     }),
     subtotal: Number(o.subtotal || o.total || 0),
@@ -190,22 +150,16 @@ export function mapOrderFromBackend(o: any): Order {
   };
 }
 
-export function refreshProductsFromBackend() {
-  getProductsFromBackend().then((remoteProds) => {
-    if (remoteProds && Array.isArray(remoteProds) && remoteProds.length > 0) {
-      const mapped = remoteProds.map((p: any) => ({
+export function mapProductFromBackend(p: any): Product {
+  return {
         id: String(p.id),
         name: p.name,
         category: p.category || "prata",
         price: Number(p.price || 0),
         discountPercent: Number(p.discountPercent || 0),
         discountPrice: p.discountPrice ? Number(p.discountPrice) : Number(p.price || 0),
-        originalPrice: p.price ? Number(p.price) : undefined,
-        rating: p.rating ? Number(p.rating) : 5.0,
-        reviewsCount: p.reviewsCount ? Number(p.reviewsCount) : 0,
-        image: p.image || p.imageUrl || seedProducts[0]?.image || "",
+        image: p.image || p.imageUrl || "",
         description: p.description || "",
-        details: p.details || [],
         stockQuantity: Number(p.stockQuantity ?? 0),
         reservedQuantity: Number(p.reservedQuantity ?? 0),
         soldQuantity: Number(p.soldQuantity ?? 0),
@@ -215,15 +169,22 @@ export function refreshProductsFromBackend() {
         width: p.width == null ? undefined : Number(p.width),
         length: p.length == null ? undefined : Number(p.length),
         inStock: Number(p.stockQuantity ?? 0) - Number(p.reservedQuantity ?? 0) > 0 && p.inStock !== false,
-      }));
-      productStore.set(mapped);
-    }
+  };
+}
+
+export function setProductsFromBackend(remoteProds: any[]) {
+  productStore.set(remoteProds.map(mapProductFromBackend));
+}
+
+export function refreshProductsFromBackend() {
+  getProductsFromBackend().then((remoteProds) => {
+    if (Array.isArray(remoteProds)) setProductsFromBackend(remoteProds);
   });
 }
 
 export function refreshOrdersFromBackend() {
   getOrdersFromBackend().then((remoteOrders) => {
-    if (remoteOrders && Array.isArray(remoteOrders) && remoteOrders.length > 0) {
+    if (Array.isArray(remoteOrders)) {
       const mapped: Order[] = remoteOrders.map(mapOrderFromBackend);
       orderStore.set(mapped);
     }
@@ -237,11 +198,11 @@ if (typeof window !== "undefined") {
 }
 
 export function useProducts(): Product[] {
-  return useSyncExternalStore(productStore.subscribe, productStore.get, () => seedProducts);
+  return useSyncExternalStore(productStore.subscribe, productStore.get, () => EMPTY_PRODUCTS);
 }
 
 export function useOrders(): Order[] {
-  return useSyncExternalStore(orderStore.subscribe, orderStore.get, () => seedOrders);
+  return useSyncExternalStore(orderStore.subscribe, orderStore.get, () => EMPTY_ORDERS);
 }
 
 export const productsApi = {

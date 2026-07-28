@@ -9,29 +9,8 @@ export interface FaqItem {
 
 const FAQ_KEY = "angel:faqs";
 
-const seedFaqs: FaqItem[] = [
-  {
-    id: "faq-1",
-    question: "As joias são realmente em Prata 925?",
-    answer: "Sim, 100% legítimas! Todas as nossas peças são fabricadas em Prata 925 autêntica com garantia vitalícia quanto ao teor do metal.",
-  },
-  {
-    id: "faq-2",
-    question: "Como funciona o envio e a opção de retirar na loja?",
-    answer: "Oferecemos frete grátis para compras acima de R$ 250,00 e também a opção de Retirada Grátis em nossa loja física em Cuiabá/MT ([endereço de retirada removido]).",
-  },
-];
-
 function loadFaqs(): FaqItem[] {
-  if (typeof window === "undefined") return seedFaqs;
-  try {
-    const raw = localStorage.getItem(FAQ_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {}
-  return seedFaqs;
+  return [];
 }
 
 type Listener = () => void;
@@ -44,15 +23,21 @@ function emit() {
 
 if (typeof window !== "undefined") {
   getFaqsFromBackend().then((remoteFaqs) => {
-    if (remoteFaqs && Array.isArray(remoteFaqs) && remoteFaqs.length > 0) {
-      state = remoteFaqs.map((f: any) => ({
-        id: String(f.id),
-        question: f.question,
-        answer: f.answer,
-      }));
-      emit();
-    }
+    if (Array.isArray(remoteFaqs)) hydrateFaqs(remoteFaqs);
   });
+}
+
+export function normalizeFaqs(remoteFaqs: any[]): FaqItem[] {
+  return remoteFaqs.map((faq: any) => ({
+    id: String(faq.id),
+    question: faq.question || "",
+    answer: faq.answer || "",
+  }));
+}
+
+export function hydrateFaqs(remoteFaqs: any[]) {
+  state = normalizeFaqs(remoteFaqs);
+  emit();
 }
 
 export const faqStore = {
