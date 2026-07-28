@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Home, Save, Upload, Star, Layout, Sparkles, Plus, Trash2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { uploadImage } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/home")({
   component: AdminHomePage,
@@ -24,7 +25,7 @@ function AdminHomePage() {
   const [values, setValues] = useState<ValueItem[]>(settings.values);
   const [highlights, setHighlights] = useState<string[]>(settings.highlightIds);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
@@ -37,12 +38,15 @@ function AdminHomePage() {
         e.target.value = "";
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setHeroImage(reader.result as string);
+      try {
+        const uploaded = await uploadImage(file);
+        setHeroImage(uploaded.url);
         toast.success("Imagem do Hero atualizada!");
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Não foi possível enviar a imagem.");
+      } finally {
+        e.target.value = "";
+      }
     }
   };
 

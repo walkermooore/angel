@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertTriangle, Pencil, Trash2, Plus, Image as ImageIcon, Upload, Percent, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { hasProductShippingDimensions, type Product } from "@/lib/products";
+import { uploadImage } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/produtos")({
   component: AdminProducts,
@@ -84,7 +85,7 @@ function AdminProducts() {
     setOpen(true);
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
@@ -97,13 +98,15 @@ function AdminProducts() {
         e.target.value = "";
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === "string") {
-          setDraft((prev) => ({ ...prev, image: reader.result as string }));
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const uploaded = await uploadImage(file);
+        setDraft((prev) => ({ ...prev, image: uploaded.url }));
+        toast.success("Imagem enviada com sucesso.");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Não foi possível enviar a imagem.");
+      } finally {
+        e.target.value = "";
+      }
     }
   };
 

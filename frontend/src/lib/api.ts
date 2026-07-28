@@ -123,6 +123,22 @@ export const revokeAdminSession = (id: string) =>
 export const revokeOtherAdminSessions = () =>
   apiMutation<{ success: boolean }>("/auth/sessions/revoke-others", { method: "POST" });
 
+export const uploadImage = async (file: File) => {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_BASE}/media/images`, {
+    method: "POST",
+    credentials: "include",
+    headers: authorizationHeader(),
+    body: form,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null) as { message?: string } | null;
+    throw new Error(body?.message || "Não foi possível enviar a imagem.");
+  }
+  return res.json() as Promise<{ url: string; filename: string; contentType: string; size: number }>;
+};
+
 // Orders
 export const getOrdersFromBackend = () => apiFetch<any[]>("/pedidos");
 export const createOrderInBackend = (orderData: any, idempotencyKey: string) =>

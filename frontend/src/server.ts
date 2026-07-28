@@ -47,7 +47,7 @@ function withSecurityHeaders(response: Response): Response {
     }
   })();
   headers.set("Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' ${apiOrigin} https://viacep.com.br; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`);
+    `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: ${apiOrigin}; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' ${apiOrigin} https://viacep.com.br; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`);
   headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("X-Frame-Options", "DENY");
