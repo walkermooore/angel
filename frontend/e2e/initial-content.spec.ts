@@ -17,7 +17,5 @@ test("catálogo nunca restaura os produtos fixos do frontend", async ({ page }) 
   await expect(page.getByText("Argolas Lumière")).toHaveCount(0);
   await expect(page.getByText("Anel Solitaire Cristal")).toHaveCount(0);
 
-  const catalog = page.getByText(/\d+ produtos?/);
-  const neutralLoading = page.getByRole("status", { name: "Carregando produtos" });
-  await expect(catalog.or(neutralLoading)).toBeVisible();
+  await expect(page.getByText(/\d+ produtos?/)).toBeVisible();
 });
