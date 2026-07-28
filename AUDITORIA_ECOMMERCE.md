@@ -35,7 +35,7 @@ O projeto já possui uma base segura para criação de pedidos: o backend recalc
 | Pagamento | 🟡 | Checkout e webhook InfinitePay implementados, mas desativados e não homologados |
 | Acompanhamento público | ✅ | Token/contato, DTO reduzido e rate limiting |
 | Dados do cliente | ✅ | Nome, telefone e e-mail persistidos |
-| Painel | 🟡 | Cookie HttpOnly, CSRF e avisos operacionais; faltam 2FA e revogação |
+| Painel | ✅ | Cookie HttpOnly, CSRF, 2FA TOTP, sessões revogáveis e avisos operacionais |
 | Imagens | 🟡 | Limites e assinaturas; ainda usa Base64/banco |
 | Checkout | 🟡 | Revisão e retry; faltam E2E e refinamento dos erros |
 | Legal e privacidade | ❌ | Textos precisam dos dados reais |
@@ -53,7 +53,7 @@ cd backend
 ./mvnw test
 ```
 
-Resultado esperado nesta revisão: **16 testes aprovados**. A suíte cobre criação segura, adulteração de preço, estoque, persistência de ajustes, concorrência, expiração, idempotência, acompanhamento, rate limiting, autenticação, CORS, headers, payload inesperado e estado desativado da InfinitePay.
+Resultado esperado nesta revisão: **17 testes aprovados**. A suíte cobre criação segura, adulteração de preço, estoque, persistência de ajustes, concorrência, expiração, idempotência, acompanhamento, rate limiting, autenticação, sessões revogáveis, preparação do 2FA, CORS, headers, payload inesperado e estado desativado da InfinitePay.
 
 ### Frontend
 
@@ -208,15 +208,17 @@ Em várias réplicas, migrar o estado para Redis, gateway ou WAF. CAPTCHA adapta
 
 ## 9. Painel administrativo
 
-**Estado: 🟡 fortalecido**
+**Estado: ✅ segurança administrativa implementada**
 
-JWT, BCrypt, ADMIN, cookie `HttpOnly`, `Secure` em produção, `SameSite=Strict`, CSRF, expiração, CORS e bloqueio de login estão implementados. O token não fica no `localStorage`.
+JWT, BCrypt, ADMIN, cookie `HttpOnly`, `Secure` em produção, `SameSite=Strict`, CSRF, expiração, CORS e bloqueio de login estão implementados. O token não fica no `localStorage` nem é devolvido no corpo do login.
 
 O painel possui uma central compacta de avisos expansíveis para estoque, medidas de frete e outras pendências operacionais. O cadastro de produtos também mostra um aviso local quando o frete não está configurado. A tela de configurações informa se a InfinitePay está pronta ou aguardando configuração.
 
-Faltam 2FA, troca/recuperação de senha, gestão de admins, revogação/lista de sessões, renovação controlada e alertas de acesso.
+O painel de Segurança permite ativar e desativar 2FA TOTP, compatível com aplicativos autenticadores, listar dispositivos conectados, revogar uma sessão e encerrar todas as outras sessões. Segredos TOTP são criptografados no banco, cada JWT possui um identificador de sessão e sessões revogadas deixam de autorizar rotas protegidas.
 
-Teste acesso sem cookie, alteração sem CSRF, origem não permitida e repetição de senha errada.
+Ainda faltam recuperação de senha, gestão de múltiplos administradores, códigos de recuperação do 2FA, renovação controlada e alertas externos de acesso.
+
+Teste acesso sem cookie, alteração sem CSRF, origem não permitida, repetição de senha errada, código TOTP inválido, repetição de login em outro navegador e revogação do dispositivo atual.
 
 ## 10. HTTPS, headers e erros
 
@@ -362,7 +364,7 @@ Há eventos consentidos para produto, sacola, checkout, entrega, frete, pagament
 - [ ] cancelamento, troca, devolução e reembolso;
 - [ ] S3/R2 e CDN;
 - [ ] rate limiting distribuído;
-- [ ] 2FA e revogação;
+- [ ] códigos de recuperação do 2FA e gestão de administradores;
 - [ ] Testcontainers, Playwright e axe;
 - [ ] deploy/rollback;
 - [ ] Search Console, Merchant Center e dashboards.
