@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, Box, CircleAlert, Info, PackageX } from "lucide-react";
+import { AlertTriangle, Box, ChevronDown, CircleAlert, Info, PackageX } from "lucide-react";
 import { useProducts } from "@/lib/store";
 import { availableProductQuantity, hasProductShippingDimensions } from "@/lib/products";
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,7 @@ function AdminAlertsPage() {
   ];
 
   return (
-    <div className="p-6 sm:p-10 w-full space-y-8">
+    <div className="p-6 sm:p-10 w-full space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl sm:text-4xl">Avisos</h1>
@@ -70,44 +70,49 @@ function AdminAlertsPage() {
       </div>
 
       {total === 0 && (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-6 flex gap-4">
-          <CircleAlert className="h-6 w-6 text-emerald-600 shrink-0" />
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 flex gap-3">
+          <CircleAlert className="h-5 w-5 text-emerald-600 shrink-0" />
           <div>
-            <h2 className="font-semibold">Nenhuma pendência crítica no catálogo</h2>
-            <p className="text-sm text-muted-foreground mt-1">Estoque e dados físicos dos produtos estão preenchidos.</p>
+            <h2 className="text-sm font-semibold">Nenhuma pendência crítica no catálogo</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Estoque e dados físicos dos produtos estão preenchidos.</p>
           </div>
         </div>
       )}
 
-      <div className="grid xl:grid-cols-2 gap-5">
+      <div className="space-y-3">
         {sections.map((section) => {
           const Icon = section.icon;
           return (
-            <section key={section.title} className={`rounded-xl border p-5 ${section.tone}`}>
-              <div className="flex items-start gap-3">
-                <Icon className="h-5 w-5 mt-0.5 shrink-0" />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between gap-3">
-                    <h2 className="font-semibold text-foreground">{section.title}</h2>
-                    <span className="text-sm font-bold">{section.products.length}</span>
+            <details key={section.title} className={`group rounded-lg border ${section.tone}`}>
+              <summary className="list-none cursor-pointer select-none px-4 py-3 flex items-center gap-3 [&::-webkit-details-marker]:hidden">
+                <Icon className="h-4 w-4 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-sm font-semibold text-foreground">{section.title}</h2>
+                </div>
+                <span className="min-w-6 h-6 px-1.5 rounded-full bg-background/80 text-xs font-bold inline-flex items-center justify-center">
+                  {section.products.length}
+                </span>
+                <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="border-t border-border/60 px-4 py-3">
+                <p className="text-xs text-muted-foreground mb-3">{section.description}</p>
+                {section.products.length > 0 ? (
+                  <div className="space-y-2">
+                    {section.products.map((product) => (
+                      <div key={product.id} className="rounded-md border border-border/70 bg-background/80 px-3 py-2">
+                        <p className="text-sm font-medium text-foreground">{product.name}</p>
+                        <p className="text-xs text-muted-foreground">{section.detail(product)}</p>
+                      </div>
+                    ))}
+                    <Button asChild variant="outline" size="sm" className="mt-1 h-8 text-xs">
+                      <Link to="/admin/produtos">Corrigir nos produtos</Link>
+                    </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">{section.description}</p>
-                </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Nenhum produto neste aviso.</p>
+                )}
               </div>
-              {section.products.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  {section.products.map((product) => (
-                    <div key={product.id} className="rounded-lg border border-border/70 bg-background/80 p-3">
-                      <p className="text-sm font-medium text-foreground">{product.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{section.detail(product)}</p>
-                    </div>
-                  ))}
-                  <Button asChild variant="outline" size="sm" className="mt-2">
-                    <Link to="/admin/produtos">Corrigir nos produtos</Link>
-                  </Button>
-                </div>
-              )}
-            </section>
+            </details>
           );
         })}
       </div>

@@ -10,9 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Trash2, Plus, Image as ImageIcon, Upload, Percent, Tag } from "lucide-react";
+import { AlertTriangle, Pencil, Trash2, Plus, Image as ImageIcon, Upload, Percent, Tag } from "lucide-react";
 import { toast } from "sonner";
-import type { Product } from "@/lib/products";
+import { hasProductShippingDimensions, type Product } from "@/lib/products";
 
 export const Route = createFileRoute("/admin/produtos")({
   component: AdminProducts,
@@ -220,7 +220,15 @@ function AdminProducts() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="capitalize">{p.category}</TableCell>
+                  <TableCell>
+                    <span className="capitalize">{p.category}</span>
+                    {!hasProductShippingDimensions(p) && (
+                      <span className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                        <AlertTriangle className="h-3 w-3 shrink-0" />
+                        Frete não configurado
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right tabular-nums">
                     <span className={hasDiscount ? "line-through text-muted-foreground text-xs" : ""}>
                       {formatBRL(p.price)}
