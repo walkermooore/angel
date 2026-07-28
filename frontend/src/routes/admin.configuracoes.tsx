@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { getMelhorEnvioAuthorizationUrl } from "@/lib/api";
+import { getInfinitePayStatus, getMelhorEnvioAuthorizationUrl } from "@/lib/api";
 import {
   institutionalDefaults,
   refreshInstitutionalSettings,
@@ -36,6 +36,7 @@ function AdminConfiguracoes() {
   const [pages, setPages] = useState<InstitutionalSettings>(institutionalDefaults);
   const [saving, setSaving] = useState(false);
   const [authorizingShipping, setAuthorizingShipping] = useState(false);
+  const [infinitePayEnabled, setInfinitePayEnabled] = useState(false);
 
   useEffect(() => {
     try {
@@ -54,6 +55,9 @@ function AdminConfiguracoes() {
 
   useEffect(() => {
     refreshInstitutionalSettings().then(setPages);
+    getInfinitePayStatus()
+      .then((status) => setInfinitePayEnabled(status?.enabled === true))
+      .catch(() => setInfinitePayEnabled(false));
   }, []);
 
   const save = async (e: React.FormEvent) => {
@@ -95,6 +99,21 @@ function AdminConfiguracoes() {
           <Button type="button" variant="outline" disabled={authorizingShipping} onClick={authorizeMelhorEnvio}>
             {authorizingShipping ? "Redirecionando..." : "Autorizar Melhor Envio"}
           </Button>
+        </div>
+        <div className="rounded-xl border border-border p-5 space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display text-2xl">InfinitePay</h2>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              infinitePayEnabled
+                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+            }`}>
+              {infinitePayEnabled ? "Pronta para uso" : "Aguardando configuração"}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            O checkout permanecerá desativado até a InfiniteTag e as URLs públicas serem configuradas no backend.
+          </p>
         </div>
         <div>
           <Label className="text-xs uppercase tracking-widest">Nome da loja</Label>

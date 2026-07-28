@@ -10,6 +10,7 @@ import { calculateMelhorEnvioFreight, type ShippingQuote } from "@/lib/melhorenv
 import { toast } from "sonner";
 import { QrCode, CreditCard, FileText, ShieldCheck, MapPin, Mail, Store, Truck, Calculator, Check } from "lucide-react";
 import { trackFunnel } from "@/lib/funnel";
+import { createInfinitePayCheckout, getInfinitePayStatus } from "@/lib/api";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({ meta: [{ title: "Checkout — Angell" }, { name: "robots", content: "noindex" }] }),
@@ -54,12 +55,20 @@ function CheckoutPage() {
   const [quotes, setQuotes] = useState<ShippingQuote[]>([]);
   const [selectedQuoteId, setSelectedQuoteId] = useState("");
   const [calculatingFreight, setCalculatingFreight] = useState(false);
+  const [infinitePayEnabled, setInfinitePayEnabled] = useState(false);
   const selectedQuote = quotes.find((quote) => quote.id === selectedQuoteId);
   const effectiveShipping = shippingOption === "retirada" ? 0 : selectedQuote?.price ?? 0;
 
   // When switching to Retirar na Loja, auto fill pickup address
   useEffect(() => {
     trackFunnel("CHECKOUT_STARTED", "page");
+    getInfinitePayStatus()
+      .then((status) => {
+        const enabled = status?.enabled === true;
+        setInfinitePayEnabled(enabled);
+        if (enabled) setPayment((current) => current === "Boleto" ? "PIX" : current);
+      })
+      .catch(() => setInfinitePayEnabled(false));
   }, []);
 
   useEffect(() => {
@@ -191,6 +200,16 @@ function CheckoutPage() {
         payment: payment === "Cartão" ? "CARTAO" : payment === "Boleto" ? "BOLETO" : "PIX",
         address: { cep, ...form },
       }, idempotencyKey);
+
+      if (infinitePayEnabled) {
+        const paymentCheckout = await createInfinitePayCheckout(
+          order.number,
+          order.publicTrackingToken || "",
+        );
+        clear();
+        window.location.assign(paymentCheckout.checkoutUrl);
+        return;
+      }
 
       clear();
       toast.success("Pedido realizado com sucesso!", { description: `Código: ${order.number}` });
@@ -457,7 +476,7 @@ function CheckoutPage() {
           {/* Pagamento */}
           <section className="space-y-4">
             <h2 className="font-display text-2xl">Forma de Pagamento</h2>
-            <div className="grid sm:grid-cols-3 gap-3">
+            <div className={`grid ${infinitePayEnabled ? "sm:grid-cols-2" : "sm:grid-cols-3"} gap-3`}>
               <button
                 type="button"
                 onClick={() => { setPayment("PIX"); trackFunnel("PAYMENT_SELECTED", "pix"); }}
@@ -486,20 +505,27 @@ function CheckoutPage() {
                 </div>
               </button>
 
-              <button
-                type="button"
-                onClick={() => { setPayment("Boleto"); trackFunnel("PAYMENT_SELECTED", "boleto"); }}
-                className={`p-4 rounded-xl border text-left flex items-center gap-3 transition-all ${
-                  payment === "Boleto" ? "border-foreground bg-secondary font-semibold" : "border-border hover:bg-secondary/50"
-                }`}
-              >
-                <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                <div>
-                  <p className="text-sm">Boleto Bancário</p>
-                  <p className="text-[10px] text-muted-foreground">Vencimento em 3 dias</p>
-                </div>
-              </button>
+              {!infinitePayEnabled && (
+                <button
+                  type="button"
+                  onClick={() => { setPayment("Boleto"); trackFunnel("PAYMENT_SELECTED", "boleto"); }}
+                  className={`p-4 rounded-xl border text-left flex items-center gap-3 transition-all ${
+                    payment === "Boleto" ? "border-foreground bg-secondary font-semibold" : "border-border hover:bg-secondary/50"
+                  }`}
+                >
+                  <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  <div>
+                    <p className="text-sm">Boleto Bancário</p>
+                    <p className="text-[10px] text-muted-foreground">Vencimento em 3 dias</p>
+                  </div>
+                </button>
+              )}
             </div>
+            {infinitePayEnabled && (
+              <p className="text-xs text-muted-foreground">
+                Você será direcionado ao ambiente seguro da InfinitePay para pagar com Pix ou cartão.
+              </p>
+            )}
           </section>
         </div>
 

@@ -117,6 +117,15 @@ export const updateOrderTrackingInBackend = (id: string, trackingCode: string) =
 export const getMelhorEnvioAuthorizationUrl = () =>
   apiMutation<{ url: string }>("/frete/oauth/authorization-url", { method: "GET" });
 
+// InfinitePay
+export const getInfinitePayStatus = () =>
+  apiFetch<{ enabled: boolean }>("/pagamentos/infinitepay/status");
+export const createInfinitePayCheckout = (orderNumber: string, trackingToken: string) =>
+  apiMutation<{ checkoutUrl: string }>("/pagamentos/infinitepay/checkout", {
+    method: "POST",
+    body: JSON.stringify({ orderNumber, trackingToken }),
+  });
+
 // Audit Logs
 export const getAuditLogsFromBackend = () => apiFetch<any[]>("/auditoria");
 export const createAuditLogBackend = (orderNumber: string, action: string, user: string, details: string) =>
