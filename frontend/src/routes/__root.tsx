@@ -17,6 +17,7 @@ import { CartDrawer } from "@/components/CartDrawer";
 import { Footer } from "@/components/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import { WhatsAppFloat } from "@/components/WhatsAppFloat";
+import { CookieBanner } from "@/components/CookieBanner";
 import { SITE_URL } from "@/lib/seo";
 
 function NotFoundComponent() {
@@ -158,6 +159,7 @@ function RootComponent() {
             <Footer />
             <CartDrawer />
             <WhatsAppFloat />
+            <CookieBanner />
           </>
         )}
         <Toaster />
