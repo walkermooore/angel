@@ -192,3 +192,73 @@ export const saveAboutSettingsToBackend = (settings: any) => apiFetch("/sobre-no
 export const getInstitutionalSettingsFromBackend = () => apiFetch<any>("/paginas-institucionais");
 export const saveInstitutionalSettingsToBackend = (settings: any) =>
   apiMutation<any>("/paginas-institucionais", { method: "PUT", body: JSON.stringify(settings) });
+
+export type AfterSalesRequest = {
+  id: string;
+  protocol: string;
+  accessToken: string;
+  orderNumber: string;
+  requestType: "CANCELAMENTO" | "TROCA" | "DEVOLUCAO";
+  reason: string;
+  details?: string;
+  status: string;
+  refundStatus: string;
+  deadlineAt: string;
+  returnedToStock: boolean;
+  adminNote?: string;
+  attachmentUrls: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export const createAfterSalesRequest = (data: {
+  orderNumber: string;
+  trackingToken?: string;
+  contact?: string;
+  requestType: string;
+  reason: string;
+  details?: string;
+  attachmentUrls: string[];
+}) => apiMutation<AfterSalesRequest>("/pos-venda", { method: "POST", body: JSON.stringify(data) });
+
+export const trackAfterSalesRequest = (protocol: string, token: string) =>
+  apiMutation<AfterSalesRequest>(
+    `/pos-venda/acompanhar?protocol=${encodeURIComponent(protocol)}&token=${encodeURIComponent(token)}`,
+    { method: "GET" },
+  );
+
+export const getAfterSalesRequests = () => apiFetch<AfterSalesRequest[]>("/pos-venda");
+export const updateAfterSalesRequest = (id: string, data: {
+  status?: string;
+  refundStatus?: string;
+  returnToStock?: boolean;
+  adminNote?: string;
+}) => apiMutation<AfterSalesRequest>(`/pos-venda/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+
+export const uploadAfterSalesAttachment = async (file: File) => {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_BASE}/pos-venda/anexos`, { method: "POST", body: form });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null) as { message?: string } | null;
+    throw new Error(body?.message || "Não foi possível enviar o anexo.");
+  }
+  return res.json() as Promise<{ url: string; contentType: string; size: number }>;
+};
+
+export type TransactionalCommunication = {
+  id: string;
+  orderNumber: string;
+  channel: string;
+  eventType: string;
+  recipient: string;
+  status: string;
+  attempts: number;
+  createdAt: string;
+  sentAt: string;
+  lastError: string;
+};
+
+export const getTransactionalCommunications = () => apiFetch<TransactionalCommunication[]>("/comunicacoes");
+export const retryTransactionalCommunication = (id: string) =>
+  apiMutation<void>(`/comunicacoes/${id}/retry`, { method: "POST" });

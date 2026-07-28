@@ -22,6 +22,7 @@ import {
   FileText,
   BellRing,
   ShieldCheck,
+  MessageCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { adminAuth } from "@/lib/admin-auth";
@@ -35,6 +36,7 @@ type AdminRoute =
   | "/admin/produtos"
   | "/admin/categorias"
   | "/admin/pedidos"
+  | "/admin/pos-venda"
   | "/admin/sobre"
   | "/admin/faq"
   | "/admin/configuracoes"
@@ -237,6 +239,18 @@ export function AdminSidebar() {
                   )}
                 >
                   <Package className="h-3.5 w-3.5 shrink-0" /> Produtos
+                </Link>
+                <Link
+                  to="/admin/pos-venda"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs transition-all",
+                    pathname.startsWith("/admin/pos-venda")
+                      ? "bg-foreground text-background font-semibold shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                  )}
+                >
+                  <MessageCircle className="h-3.5 w-3.5 shrink-0" /> Pós-venda
                 </Link>
                 <Link
                   to="/admin/categorias"

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { type Order } from "@/lib/store";
 import { formatBRL } from "@/lib/cart";
@@ -134,6 +134,13 @@ function MeuPedidoPage() {
         <>
           {foundOrder ? (
             <div className="space-y-8 animate-fade-in">
+              <div className="flex justify-end">
+                <Button asChild variant="outline" className="rounded-full">
+                  <Link to="/pos-venda" search={{ n: foundOrder.number, t: t || "", p: "" }}>
+                    Solicitar cancelamento, troca ou devolução
+                  </Link>
+                </Button>
+              </div>
               {foundOrder.status === "Concluído" && (
                 <div className="p-6 border border-emerald-500/40 bg-emerald-500/10 rounded-2xl text-center">
                   <span className="inline-flex items-center gap-2 text-sm sm:text-base uppercase tracking-[0.2em] font-bold text-emerald-700 dark:text-emerald-400">

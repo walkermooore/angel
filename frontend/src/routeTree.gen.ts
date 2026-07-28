@@ -14,6 +14,7 @@ import { Route as TermosRouteImport } from './routes/termos'
 import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as ProdutosRouteImport } from './routes/produtos'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as PosVendaRouteImport } from './routes/pos-venda'
 import { Route as PedidoConcluidoRouteImport } from './routes/pedido-concluido'
 import { Route as MeuPedidoRouteImport } from './routes/meu-pedido'
 import { Route as FaqRouteImport } from './routes/faq'
@@ -26,6 +27,7 @@ import { Route as ProdutosSlugRouteImport } from './routes/produtos_.$slug'
 import { Route as AdminSobreRouteImport } from './routes/admin.sobre'
 import { Route as AdminSegurancaRouteImport } from './routes/admin.seguranca'
 import { Route as AdminProdutosRouteImport } from './routes/admin.produtos'
+import { Route as AdminPosVendaRouteImport } from './routes/admin.pos-venda'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminHomeRouteImport } from './routes/admin.home'
@@ -58,6 +60,11 @@ const ProdutosRoute = ProdutosRouteImport.update({
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
   id: '/privacidade',
   path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PosVendaRoute = PosVendaRouteImport.update({
+  id: '/pos-venda',
+  path: '/pos-venda',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PedidoConcluidoRoute = PedidoConcluidoRouteImport.update({
@@ -120,6 +127,11 @@ const AdminProdutosRoute = AdminProdutosRouteImport.update({
   path: '/produtos',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPosVendaRoute = AdminPosVendaRouteImport.update({
+  id: '/pos-venda',
+  path: '/pos-venda',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPedidosRoute = AdminPedidosRouteImport.update({
   id: '/pedidos',
   path: '/pedidos',
@@ -169,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/meu-pedido': typeof MeuPedidoRoute
   '/pedido-concluido': typeof PedidoConcluidoRoute
+  '/pos-venda': typeof PosVendaRoute
   '/privacidade': typeof PrivacidadeRoute
   '/produtos': typeof ProdutosRoute
   '/sobre': typeof SobreRoute
@@ -182,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/admin/home': typeof AdminHomeRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/pedidos': typeof AdminPedidosRoute
+  '/admin/pos-venda': typeof AdminPosVendaRoute
   '/admin/produtos': typeof AdminProdutosRoute
   '/admin/seguranca': typeof AdminSegurancaRoute
   '/admin/sobre': typeof AdminSobreRoute
@@ -195,6 +209,7 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/meu-pedido': typeof MeuPedidoRoute
   '/pedido-concluido': typeof PedidoConcluidoRoute
+  '/pos-venda': typeof PosVendaRoute
   '/privacidade': typeof PrivacidadeRoute
   '/produtos': typeof ProdutosRoute
   '/sobre': typeof SobreRoute
@@ -208,6 +223,7 @@ export interface FileRoutesByTo {
   '/admin/home': typeof AdminHomeRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/pedidos': typeof AdminPedidosRoute
+  '/admin/pos-venda': typeof AdminPosVendaRoute
   '/admin/produtos': typeof AdminProdutosRoute
   '/admin/seguranca': typeof AdminSegurancaRoute
   '/admin/sobre': typeof AdminSobreRoute
@@ -223,6 +239,7 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/meu-pedido': typeof MeuPedidoRoute
   '/pedido-concluido': typeof PedidoConcluidoRoute
+  '/pos-venda': typeof PosVendaRoute
   '/privacidade': typeof PrivacidadeRoute
   '/produtos': typeof ProdutosRoute
   '/sobre': typeof SobreRoute
@@ -236,6 +253,7 @@ export interface FileRoutesById {
   '/admin/home': typeof AdminHomeRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/pedidos': typeof AdminPedidosRoute
+  '/admin/pos-venda': typeof AdminPosVendaRoute
   '/admin/produtos': typeof AdminProdutosRoute
   '/admin/seguranca': typeof AdminSegurancaRoute
   '/admin/sobre': typeof AdminSobreRoute
@@ -252,6 +270,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/meu-pedido'
     | '/pedido-concluido'
+    | '/pos-venda'
     | '/privacidade'
     | '/produtos'
     | '/sobre'
@@ -265,6 +284,7 @@ export interface FileRouteTypes {
     | '/admin/home'
     | '/admin/login'
     | '/admin/pedidos'
+    | '/admin/pos-venda'
     | '/admin/produtos'
     | '/admin/seguranca'
     | '/admin/sobre'
@@ -278,6 +298,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/meu-pedido'
     | '/pedido-concluido'
+    | '/pos-venda'
     | '/privacidade'
     | '/produtos'
     | '/sobre'
@@ -291,6 +312,7 @@ export interface FileRouteTypes {
     | '/admin/home'
     | '/admin/login'
     | '/admin/pedidos'
+    | '/admin/pos-venda'
     | '/admin/produtos'
     | '/admin/seguranca'
     | '/admin/sobre'
@@ -305,6 +327,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/meu-pedido'
     | '/pedido-concluido'
+    | '/pos-venda'
     | '/privacidade'
     | '/produtos'
     | '/sobre'
@@ -318,6 +341,7 @@ export interface FileRouteTypes {
     | '/admin/home'
     | '/admin/login'
     | '/admin/pedidos'
+    | '/admin/pos-venda'
     | '/admin/produtos'
     | '/admin/seguranca'
     | '/admin/sobre'
@@ -333,6 +357,7 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   MeuPedidoRoute: typeof MeuPedidoRoute
   PedidoConcluidoRoute: typeof PedidoConcluidoRoute
+  PosVendaRoute: typeof PosVendaRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
   ProdutosRoute: typeof ProdutosRoute
   SobreRoute: typeof SobreRoute
@@ -376,6 +401,13 @@ declare module '@tanstack/react-router' {
       path: '/privacidade'
       fullPath: '/privacidade'
       preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pos-venda': {
+      id: '/pos-venda'
+      path: '/pos-venda'
+      fullPath: '/pos-venda'
+      preLoaderRoute: typeof PosVendaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pedido-concluido': {
@@ -462,6 +494,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProdutosRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/pos-venda': {
+      id: '/admin/pos-venda'
+      path: '/pos-venda'
+      fullPath: '/admin/pos-venda'
+      preLoaderRoute: typeof AdminPosVendaRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/pedidos': {
       id: '/admin/pedidos'
       path: '/pedidos'
@@ -530,6 +569,7 @@ interface AdminRouteChildren {
   AdminHomeRoute: typeof AdminHomeRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminPedidosRoute: typeof AdminPedidosRoute
+  AdminPosVendaRoute: typeof AdminPosVendaRoute
   AdminProdutosRoute: typeof AdminProdutosRoute
   AdminSegurancaRoute: typeof AdminSegurancaRoute
   AdminSobreRoute: typeof AdminSobreRoute
@@ -545,6 +585,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminHomeRoute: AdminHomeRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminPedidosRoute: AdminPedidosRoute,
+  AdminPosVendaRoute: AdminPosVendaRoute,
   AdminProdutosRoute: AdminProdutosRoute,
   AdminSegurancaRoute: AdminSegurancaRoute,
   AdminSobreRoute: AdminSobreRoute,
@@ -561,6 +602,7 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   MeuPedidoRoute: MeuPedidoRoute,
   PedidoConcluidoRoute: PedidoConcluidoRoute,
+  PosVendaRoute: PosVendaRoute,
   PrivacidadeRoute: PrivacidadeRoute,
   ProdutosRoute: ProdutosRoute,
   SobreRoute: SobreRoute,
