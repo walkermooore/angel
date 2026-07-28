@@ -18,8 +18,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -27,6 +25,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -39,8 +38,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class SecurityAndOrderIntegrationTests {
-
-    private static final Pattern TOKEN_PATTERN = Pattern.compile("\"token\"\\s*:\\s*\"([^\"]+)\"");
 
     @Autowired
     private MockMvc mockMvc;
@@ -64,18 +61,20 @@ class SecurityAndOrderIntegrationTests {
         inventoryMovementRepository.deleteAll();
         purchaseOrderRepository.deleteAll();
         productRepository.deleteAll();
-        String response = mockMvc.perform(post("/api/auth/login")
+        var response = mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {"email":"integration@angel.test","password":"integration-password-123"}
                     """))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
-            .andReturn().getResponse().getContentAsString();
+            .andExpect(jsonPath("$.token").doesNotExist())
+            .andReturn().getResponse();
 
-        Matcher matcher = TOKEN_PATTERN.matcher(response);
-        assertThat(matcher.find()).isTrue();
-        token = matcher.group(1);
+        String sessionCookie = response.getHeaders("Set-Cookie").stream()
+            .filter(value -> value.startsWith("ADMIN_SESSION="))
+            .findFirst().orElseThrow();
+        token = sessionCookie.substring("ADMIN_SESSION=".length(), sessionCookie.indexOf(';'));
     }
 
     @Test
@@ -289,6 +288,33 @@ class SecurityAndOrderIntegrationTests {
         mockMvc.perform(get("/api/pedidos")
                 .header("Authorization", "Bearer " + token))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    void createsTwoFactorSetupAndRevokesCurrentAdministrativeSession() throws Exception {
+        mockMvc.perform(post("/api/auth/2fa/setup")
+                .header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.secret").isString())
+            .andExpect(jsonPath("$.provisioningUri").value(
+                org.hamcrest.Matchers.startsWith("otpauth://totp/Angell:")));
+
+        String sessions = mockMvc.perform(get("/api/auth/sessions")
+                .header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].current").value(true))
+            .andReturn().getResponse().getContentAsString();
+        String sessionId = tools.jackson.databind.json.JsonMapper.builder().build()
+            .readTree(sessions).get(0).path("id").asText();
+
+        mockMvc.perform(delete("/api/auth/sessions/{id}", sessionId)
+                .header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.current").value(true));
+
+        mockMvc.perform(get("/api/auth/me")
+                .header("Authorization", "Bearer " + token))
+            .andExpect(status().isUnauthorized());
     }
 
     @Test

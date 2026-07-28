@@ -21,6 +21,7 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import com.angel.backend.security.ApiRateLimitFilter;
 import com.angel.backend.security.AdminCsrfFilter;
+import com.angel.backend.security.AdminSessionFilter;
 import jakarta.servlet.http.Cookie;
 
 import javax.crypto.SecretKey;
@@ -33,6 +34,7 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, ApiRateLimitFilter rateLimitFilter,
                                             AdminCsrfFilter csrfFilter,
+                                            AdminSessionFilter sessionFilter,
                                             @Value("${app.security.require-https:false}") boolean requireHttps)
         throws Exception {
         http
@@ -74,7 +76,8 @@ public class SecurityConfig {
                 .addHeaderWriter(new StaticHeadersWriter(
                     "Cross-Origin-Resource-Policy", "same-site")))
             .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterAfter(csrfFilter, ApiRateLimitFilter.class);
+            .addFilterAfter(csrfFilter, ApiRateLimitFilter.class)
+            .addFilterAfter(sessionFilter, org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class);
         if (requireHttps) {
             http.redirectToHttps(https -> {});
         }

@@ -33,6 +33,14 @@ public class AdminUser {
 
     private String role = "ADMIN";
 
+    private boolean twoFactorEnabled;
+
+    @Column(length = 1000)
+    private String twoFactorSecret;
+
+    @Column(length = 1000)
+    private String pendingTwoFactorSecret;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
