@@ -3,6 +3,7 @@ package com.angel.backend.controller;
 import com.angel.backend.model.HomeSettings;
 import com.angel.backend.repository.HomeSettingsRepository;
 import org.springframework.web.bind.annotation.*;
+import com.angel.backend.service.ImageStorageService;
 
 import java.util.List;
 
@@ -11,9 +12,11 @@ import java.util.List;
 public class HomeSettingsController {
 
     private final HomeSettingsRepository homeSettingsRepository;
+    private final ImageStorageService imageStorage;
 
-    public HomeSettingsController(HomeSettingsRepository homeSettingsRepository) {
+    public HomeSettingsController(HomeSettingsRepository homeSettingsRepository, ImageStorageService imageStorage) {
         this.homeSettingsRepository = homeSettingsRepository;
+        this.imageStorage = imageStorage;
     }
 
     @GetMapping
@@ -37,6 +40,7 @@ public class HomeSettingsController {
 
     @PutMapping
     public HomeSettings atualizarConfiguracoes(@RequestBody HomeSettings settings) {
+        imageStorage.validateReference(settings.getHeroImage());
         settings.setId(1L);
         return homeSettingsRepository.save(settings);
     }

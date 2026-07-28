@@ -52,6 +52,7 @@ public class SecurityConfig {
                     "/api/home-settings", "/api/sobre-nos", "/api/paginas-institucionais"
                 ).permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/produtos/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/media/images/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/pagamentos/infinitepay/status").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/frete/oauth/callback").permitAll()
                 .requestMatchers("/error").permitAll()

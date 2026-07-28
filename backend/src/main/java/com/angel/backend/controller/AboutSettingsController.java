@@ -3,15 +3,18 @@ package com.angel.backend.controller;
 import com.angel.backend.model.AboutSettings;
 import com.angel.backend.repository.AboutSettingsRepository;
 import org.springframework.web.bind.annotation.*;
+import com.angel.backend.service.ImageStorageService;
 
 @RestController
 @RequestMapping("/api/sobre-nos")
 public class AboutSettingsController {
 
     private final AboutSettingsRepository repository;
+    private final ImageStorageService imageStorage;
 
-    public AboutSettingsController(AboutSettingsRepository repository) {
+    public AboutSettingsController(AboutSettingsRepository repository, ImageStorageService imageStorage) {
         this.repository = repository;
+        this.imageStorage = imageStorage;
     }
 
     @GetMapping
@@ -25,7 +28,10 @@ public class AboutSettingsController {
         current.setId(1L);
         if (request.getSubtitle() != null) current.setSubtitle(request.getSubtitle());
         if (request.getTitle() != null) current.setTitle(request.getTitle());
-        if (request.getImageUrl() != null) current.setImageUrl(request.getImageUrl());
+        if (request.getImageUrl() != null) {
+            if (!request.getImageUrl().equals(current.getImageUrl())) imageStorage.validateReference(request.getImageUrl());
+            current.setImageUrl(request.getImageUrl());
+        }
         if (request.getParagraph1() != null) current.setParagraph1(request.getParagraph1());
         if (request.getParagraph2() != null) current.setParagraph2(request.getParagraph2());
         if (request.getParagraph3() != null) current.setParagraph3(request.getParagraph3());

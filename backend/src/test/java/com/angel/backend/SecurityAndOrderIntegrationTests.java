@@ -15,6 +15,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -315,6 +317,29 @@ class SecurityAndOrderIntegrationTests {
         mockMvc.perform(get("/api/auth/me")
                 .header("Authorization", "Bearer " + token))
             .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void storesProductImagesAsFilesInsteadOfBase64() throws Exception {
+        byte[] image = new byte[] {
+            (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00
+        };
+        MockMultipartFile file = new MockMultipartFile("file", "produto.png", "image/png", image);
+
+        String response = mockMvc.perform(multipart("/api/media/images")
+                .file(file)
+                .header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.url").value(org.hamcrest.Matchers.containsString("/api/media/images/")))
+            .andExpect(jsonPath("$.url").value(org.hamcrest.Matchers.not(
+                org.hamcrest.Matchers.startsWith("data:"))))
+            .andReturn().getResponse().getContentAsString();
+
+        String filename = tools.jackson.databind.json.JsonMapper.builder().build()
+            .readTree(response).path("filename").asText();
+        mockMvc.perform(get("/api/media/images/{filename}", filename))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType("image/png"));
     }
 
     @Test

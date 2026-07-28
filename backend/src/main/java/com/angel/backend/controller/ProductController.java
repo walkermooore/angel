@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Base64;
 import java.util.UUID;
 
 @RestController
@@ -72,7 +71,7 @@ public class ProductController {
             if (request.getDiscountPrice() != null) produto.setDiscountPrice(request.getDiscountPrice());
             if (request.getCategory() != null) produto.setCategory(request.getCategory());
             if (request.getImageUrl() != null) {
-                validateImage(request.getImageUrl());
+                if (!request.getImageUrl().equals(produto.getImageUrl())) validateImage(request.getImageUrl());
                 produto.setImageUrl(request.getImageUrl());
             }
             if (request.getStockQuantity() != null && request.getStockQuantity() >= 0) {
@@ -113,32 +112,15 @@ public class ProductController {
 
     private void validateImage(String image) {
         if (image == null || image.isBlank()) return;
-        if (image.startsWith("https://")) {
+        if (image.startsWith("https://") || image.startsWith("http://localhost:")
+            || image.startsWith("http://127.0.0.1:")) {
             if (image.length() > 2_048) {
                 throw new CheckoutException(HttpStatus.BAD_REQUEST, "A URL da imagem é muito longa.");
             }
             return;
         }
-        if (!image.startsWith("data:image/jpeg;base64,")
-            && !image.startsWith("data:image/png;base64,")
-            && !image.startsWith("data:image/webp;base64,")) {
-            throw new CheckoutException(HttpStatus.BAD_REQUEST,
-                "Use uma URL HTTPS ou imagem JPEG, PNG ou WebP.");
-        }
-        int separator = image.indexOf(',');
-        try {
-            byte[] decoded = Base64.getDecoder().decode(image.substring(separator + 1));
-            if (decoded.length > 2 * 1024 * 1024) {
-                throw new CheckoutException(HttpStatus.PAYLOAD_TOO_LARGE,
-                    "A imagem deve ter no máximo 2 MB.");
-            }
-            if (!hasAllowedSignature(decoded)) {
-                throw new CheckoutException(HttpStatus.BAD_REQUEST,
-                    "O conteúdo do arquivo não corresponde a uma imagem permitida.");
-            }
-        } catch (IllegalArgumentException exception) {
-            throw new CheckoutException(HttpStatus.BAD_REQUEST, "A imagem Base64 é inválida.");
-        }
+        throw new CheckoutException(HttpStatus.BAD_REQUEST,
+            "Envie a imagem pelo serviço de arquivos antes de salvar o produto.");
     }
 
     private void validateShippingDimensions(Product product) {
@@ -151,14 +133,4 @@ public class ProductController {
         }
     }
 
-    private boolean hasAllowedSignature(byte[] data) {
-        boolean jpeg = data.length >= 3
-            && (data[0] & 0xff) == 0xff && (data[1] & 0xff) == 0xd8 && (data[2] & 0xff) == 0xff;
-        boolean png = data.length >= 8
-            && (data[0] & 0xff) == 0x89 && data[1] == 0x50 && data[2] == 0x4e && data[3] == 0x47;
-        boolean webp = data.length >= 12
-            && data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[3] == 'F'
-            && data[8] == 'W' && data[9] == 'E' && data[10] == 'B' && data[11] == 'P';
-        return jpeg || png || webp;
-    }
 }
