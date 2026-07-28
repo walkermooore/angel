@@ -20,6 +20,7 @@ import {
   ShoppingBag,
   Activity,
   FileText,
+  BellRing,
 } from "lucide-react";
 import { useState } from "react";
 import { adminAuth } from "@/lib/admin-auth";
@@ -28,6 +29,7 @@ import { cn } from "@/lib/utils";
 
 type AdminRoute =
   | "/admin"
+  | "/admin/avisos"
   | "/admin/home"
   | "/admin/produtos"
   | "/admin/categorias"
@@ -180,6 +182,18 @@ export function AdminSidebar() {
                   )}
                 >
                   <History className="h-3.5 w-3.5 shrink-0" /> Auditoria
+                </Link>
+                <Link
+                  to="/admin/avisos"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs transition-all",
+                    pathname.startsWith("/admin/avisos")
+                      ? "bg-foreground text-background font-semibold shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                  )}
+                >
+                  <BellRing className="h-3.5 w-3.5 shrink-0" /> Avisos
                 </Link>
               </div>
             )}

@@ -31,6 +31,7 @@ import { Route as AdminHomeRouteImport } from './routes/admin.home'
 import { Route as AdminFaqRouteImport } from './routes/admin.faq'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
+import { Route as AdminAvisosRouteImport } from './routes/admin.avisos'
 import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
 
 const TrocasRoute = TrocasRouteImport.update({
@@ -143,6 +144,11 @@ const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
   path: '/categorias',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAvisosRoute = AdminAvisosRouteImport.update({
+  id: '/avisos',
+  path: '/avisos',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAuditoriaRoute = AdminAuditoriaRouteImport.update({
   id: '/auditoria',
   path: '/auditoria',
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/termos': typeof TermosRoute
   '/trocas': typeof TrocasRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
+  '/admin/avisos': typeof AdminAvisosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/faq': typeof AdminFaqRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/termos': typeof TermosRoute
   '/trocas': typeof TrocasRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
+  '/admin/avisos': typeof AdminAvisosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/faq': typeof AdminFaqRoute
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/termos': typeof TermosRoute
   '/trocas': typeof TrocasRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
+  '/admin/avisos': typeof AdminAvisosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/faq': typeof AdminFaqRoute
@@ -240,6 +249,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/trocas'
     | '/admin/auditoria'
+    | '/admin/avisos'
     | '/admin/categorias'
     | '/admin/configuracoes'
     | '/admin/faq'
@@ -264,6 +274,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/trocas'
     | '/admin/auditoria'
+    | '/admin/avisos'
     | '/admin/categorias'
     | '/admin/configuracoes'
     | '/admin/faq'
@@ -289,6 +300,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/trocas'
     | '/admin/auditoria'
+    | '/admin/avisos'
     | '/admin/categorias'
     | '/admin/configuracoes'
     | '/admin/faq'
@@ -473,6 +485,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriasRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/avisos': {
+      id: '/admin/avisos'
+      path: '/avisos'
+      fullPath: '/admin/avisos'
+      preLoaderRoute: typeof AdminAvisosRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/auditoria': {
       id: '/admin/auditoria'
       path: '/auditoria'
@@ -485,6 +504,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminAuditoriaRoute: typeof AdminAuditoriaRoute
+  AdminAvisosRoute: typeof AdminAvisosRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
   AdminFaqRoute: typeof AdminFaqRoute
@@ -498,6 +518,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditoriaRoute: AdminAuditoriaRoute,
+  AdminAvisosRoute: AdminAvisosRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminConfiguracoesRoute: AdminConfiguracoesRoute,
   AdminFaqRoute: AdminFaqRoute,
