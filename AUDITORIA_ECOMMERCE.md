@@ -37,7 +37,7 @@ O projeto já possui uma base segura para criação de pedidos: o backend recalc
 | Dados do cliente | ✅ | Nome, telefone e e-mail persistidos |
 | Painel | ✅ | Cookie HttpOnly, CSRF, 2FA TOTP, sessões revogáveis e avisos operacionais |
 | Imagens | 🟡 | Arquivos fora do banco, upload seguro e migração legada; falta storage externo/CDN |
-| Checkout | 🟡 | Revisão e retry; faltam E2E e refinamento dos erros |
+| Checkout | ✅ | Revisão, erros por campo, foco acessível, retry e E2E desktop/celular |
 | Legal e privacidade | ❌ | Textos precisam dos dados reais |
 | Backup e incidentes | 🟡 | Scripts e política; falta implantação |
 | SEO técnico | ✅ | URLs, sitemap, robots, feed e JSON-LD |
@@ -253,11 +253,13 @@ Produção exige credenciais externas, suporta TLS e desativa bootstrap automát
 
 ## 13. Checkout e erros
 
-**Estado: ✅ revisão; 🟡 refinamento**
+**Estado: ✅ fluxo e tratamento de erros implementados**
 
-Há revisão de produtos, valores, contato, endereço, entrega, frete, pagamento e termos, com edição, retry e preservação dos dados. Falhas gerais, CEP e frete são visíveis.
+Há revisão de produtos, valores, contato, endereço, entrega, frete, pagamento e termos, com edição, retry e preservação dos dados. Nome, e-mail, telefone, CEP, endereço, frete e aceite possuem mensagens específicas junto aos campos, `aria-invalid`, `aria-describedby` e foco automático no primeiro problema.
 
-Faltam erros junto a todos os campos, foco consistente no primeiro erro, leitor de tela e distinção mais detalhada das falhas. O checkout convidado deve permanecer.
+Falhas do CEP, Melhor Envio e criação do pedido permanecem visíveis, sem limpar a sacola. O teste E2E simula indisponibilidade temporária da API, confirma que os produtos continuam salvos e repete a confirmação até concluir. O checkout convidado permanece.
+
+Ainda é necessário homologar o fluxo real completo com Melhor Envio e InfinitePay nos ambientes externos.
 
 ## 14. Sacola
 
@@ -329,13 +331,15 @@ Há `aria-live` e melhorias pontuais. Testar teclado, foco, diálogos, contraste
 
 Já cobre autenticação, criação segura, adulteração, produto inativo, estoque, persistência de ajuste manual, concorrência, idempotência, expiração, acompanhamento, rate limiting, CORS, headers, payload, frete, status, health e comportamento seguro da InfinitePay enquanto desativada.
 
-Faltam frontend unitário, Playwright/Cypress, axe, contrato, PostgreSQL/Testcontainers, testes automatizados do provedor e webhooks, cancelamento/reembolso, Melhor Envio controlado e smoke pós-deploy.
+Playwright cobre checkout em Chromium desktop e celular: erros por campo, foco, atributos acessíveis, retirada, revisão, termos, falha da API, preservação da sacola, retry e conclusão.
+
+Faltam frontend unitário, axe, contrato, PostgreSQL/Testcontainers, testes automatizados do provedor e webhooks, cancelamento/reembolso, Melhor Envio controlado e smoke pós-deploy.
 
 ## 24. CI/CD
 
 **Estado: ✅ CI; 🟡 deploy**
 
-`.github/workflows/ci.yml` executa testes, lint, TypeScript, build, auditoria de produção, detecção de segredos e construção das imagens. O backend passou a usar Maven oficial no job e na imagem Docker, eliminando a dependência incorreta de um `mvnw` inexistente no contexto da imagem. Faltam provedor, ambientes, deploy aprovado, migrações, smoke e rollback ensaiado.
+`.github/workflows/ci.yml` executa testes, lint, TypeScript, build, Playwright em Chromium, auditoria de produção, detecção de segredos e construção das imagens. O backend passou a usar Maven oficial no job e na imagem Docker, eliminando a dependência incorreta de um `mvnw` inexistente no contexto da imagem. Faltam provedor, ambientes, deploy aprovado, migrações, smoke e rollback ensaiado.
 
 ## 25. Observabilidade
 
