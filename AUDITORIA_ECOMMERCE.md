@@ -36,7 +36,7 @@ O projeto já possui uma base segura para criação de pedidos: o backend recalc
 | Acompanhamento público | ✅ | Token/contato, DTO reduzido e rate limiting |
 | Dados do cliente | ✅ | Nome, telefone e e-mail persistidos |
 | Painel | ✅ | Cookie HttpOnly, CSRF, 2FA TOTP, sessões revogáveis e avisos operacionais |
-| Imagens | 🟡 | Limites e assinaturas; ainda usa Base64/banco |
+| Imagens | 🟡 | Arquivos fora do banco, upload seguro e migração legada; falta storage externo/CDN |
 | Checkout | 🟡 | Revisão e retry; faltam E2E e refinamento dos erros |
 | Legal e privacidade | ❌ | Textos precisam dos dados reais |
 | Backup e incidentes | 🟡 | Scripts e política; falta implantação |
@@ -53,7 +53,7 @@ cd backend
 ./mvnw test
 ```
 
-Resultado esperado nesta revisão: **17 testes aprovados**. A suíte cobre criação segura, adulteração de preço, estoque, persistência de ajustes, concorrência, expiração, idempotência, acompanhamento, rate limiting, autenticação, sessões revogáveis, preparação do 2FA, CORS, headers, payload inesperado e estado desativado da InfinitePay.
+Resultado esperado nesta revisão: **18 testes aprovados**. A suíte cobre criação segura, adulteração de preço, estoque, persistência de ajustes, concorrência, expiração, idempotência, acompanhamento, rate limiting, autenticação, sessões revogáveis, preparação do 2FA, upload de imagens, CORS, headers, payload inesperado e estado desativado da InfinitePay.
 
 ### Frontend
 
@@ -235,9 +235,15 @@ Não devem aparecer SQL, classes, caminhos, segredos ou stack trace. O proxy dev
 
 ## 11. Imagens
 
-**Estado: 🟡 parcial**
+**Estado: 🟡 armazenamento por arquivo implementado; storage externo pendente**
 
-Há limite de 2 MB, payload reduzido, JPEG/PNG/WebP e validação da assinatura do arquivo. Faltam S3/R2, upload assinado, CDN, remoção de metadados, redimensionamento, WebP/AVIF e imagens responsivas. Base64 no banco deve ser substituído antes de ampliar muito o catálogo.
+Novas imagens de produtos, banner da home e página “Sobre” são enviadas como `multipart/form-data`, limitadas a 2 MB e aceitam apenas JPEG, PNG ou WebP com assinatura válida. O backend gera nomes UUID, impede travessia de diretório, grava o arquivo de forma atômica e salva no banco somente a URL.
+
+As imagens são servidas por uma rota pública com tipo de conteúdo controlado e cache imutável de um ano. Imagens Base64 antigas são migradas automaticamente para arquivos na inicialização. Novos cadastros não aceitam mais Base64.
+
+O diretório é configurado por `MEDIA_DIRECTORY`, a URL pública por `MEDIA_PUBLIC_BASE_URL` e a imagem Docker possui `/app/data/uploads` como volume. Esse volume precisa entrar no backup e ser persistente em qualquer implantação.
+
+Para produção com múltiplas réplicas ainda faltam S3/R2 ou serviço compatível, upload assinado, CDN, remoção de metadados, redimensionamento, geração WebP/AVIF, imagens responsivas e limpeza automática de arquivos órfãos.
 
 ## 12. Segredos e banco
 
@@ -362,7 +368,7 @@ Há eventos consentidos para produto, sacola, checkout, entrega, frete, pagament
 
 - [ ] comunicações;
 - [ ] cancelamento, troca, devolução e reembolso;
-- [ ] S3/R2 e CDN;
+- [ ] migrar o diretório de imagens para S3/R2, adicionar CDN e variantes otimizadas;
 - [ ] rate limiting distribuído;
 - [ ] códigos de recuperação do 2FA e gestão de administradores;
 - [ ] Testcontainers, Playwright e axe;
