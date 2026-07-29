@@ -1,393 +1,344 @@
-# E-commerce full stack — projeto de portfólio
+# Angel — E-commerce Full Stack
 
-Aplicação completa de comércio eletrônico desenvolvida para uma loja de joias e cosméticos, com vitrine pública, checkout, gestão administrativa, estoque transacional, integrações externas e recursos de segurança e operação.
+[![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=111827)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![RabbitMQ](https://img.shields.io/badge/RabbitMQ-4-FF6600?logo=rabbitmq&logoColor=white)](https://www.rabbitmq.com/)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
-> **Status do projeto:** o desenvolvimento comercial foi encerrado porque o cliente desistiu de prosseguir com o projeto. O repositório foi preservado exclusivamente como portfólio técnico e material de estudo. Dados pessoais, contatos, credenciais e informações identificáveis do cliente foram removidos. A aplicação não representa uma loja em operação e não deve processar vendas reais sem nova configuração, revisão legal e homologação.
+E-commerce para catálogo, checkout, pedidos, estoque e administração de uma loja de produtos físicos. O desenvolvimento comercial foi descontinuado pelo cliente e o projeto permanece como portfólio técnico, sem dados pessoais ou credenciais reais.
 
-## Visão geral
+> [!IMPORTANT]
+> A aplicação não representa uma loja em operação. Pagamento, frete e comunicações exigem novas credenciais, homologação e revisão jurídica antes de qualquer uso comercial.
 
-O sistema é dividido em:
+## Sobre o Projeto
 
-- frontend React com renderização no servidor e roteamento por arquivos;
-- API REST em Java e Spring Boot;
-- PostgreSQL com migrações versionadas pelo Flyway;
-- painel administrativo protegido;
-- serviços de pagamento, frete, imagens, notificações e pós-venda preparados para integração;
-- mensageria assíncrona com RabbitMQ, outbox persistente e dead-letter queue;
-- CI, testes automatizados, Docker e recursos de observabilidade.
+O Angel substitui processos manuais de catálogo, estoque, frete e acompanhamento de pedidos por uma operação centralizada.
 
-## Funcionalidades implementadas
+- **Objetivo:** demonstrar o ciclo completo de uma venda online com validações no servidor.
+- **Público-alvo:** pequenos varejistas de produtos físicos.
+- **Escopo:** loja responsiva, sacola, checkout, pedidos, estoque, conteúdo e painel administrativo.
+- **Diferenciais:** idempotência, reserva transacional, acompanhamento seguro, 2FA, outbox e RabbitMQ com DLQ.
 
-### Loja e catálogo
+## Tecnologias Utilizadas
 
-- Home administrável, banners, destaques e conteúdo institucional;
-- catálogo com categorias, busca, filtros e produtos em destaque;
-- página individual de produto com rota amigável;
-- preço normal, desconto e apresentação de disponibilidade;
-- quantidade disponível na listagem, no produto e na sacola;
-- remoção automática de produtos sem estoque da vitrine pública;
-- skeletons neutros durante o carregamento;
-- conteúdo sempre consultado no backend, sem restauração de catálogo fictício;
-- comportamento responsivo para desktop e dispositivos móveis.
+| Área | Tecnologias |
+| --- | --- |
+| Frontend | React 19, TypeScript 5, TanStack Start/Router/Query, Vite 8 |
+| UI | Tailwind CSS 4, Radix UI, shadcn/ui, React Hook Form, Zod |
+| Backend | Java 21, Spring Boot 4.1, MVC, Security, Data JPA |
+| Dados | PostgreSQL 17, Hibernate, Flyway, H2 |
+| Mensageria | RabbitMQ 4, Spring AMQP, outbox e DLQ |
+| Integrações | Melhor Envio, InfinitePay, SMTP e webhook WhatsApp |
+| Operação | Actuator, Micrometer, Prometheus, Docker e Compose |
+| Qualidade | JUnit, MockMvc, Playwright, ESLint, TypeScript e Maven |
 
-### Sacola e checkout
+## Arquitetura
 
-- inclusão, remoção, alteração de quantidade e desfazer remoção;
-- validação da quantidade contra o estoque disponível;
-- persistência da sacola no navegador;
-- resumo de subtotal, desconto, frete e total;
-- formulário de contato, endereço, entrega e pagamento;
-- consulta de CEP;
-- revisão final antes da criação do pedido;
-- mensagens de erro associadas aos campos e foco no primeiro erro;
-- preservação da sacola e dos dados quando a API falha;
-- nova tentativa segura;
-- idempotência para impedir pedidos duplicados;
-- recálculo autoritativo de preços e totais pelo backend.
+Monólito modular cliente-servidor. Não há microsserviços, Clean Architecture ou arquitetura hexagonal formal.
 
-### Pedidos e acompanhamento
-
-- criação segura de pedidos;
-- número público e token forte de acompanhamento;
-- consulta por token ou confirmação de contato;
-- DTO público reduzido, sem exposição do endereço completo;
-- status de pagamento, preparação, envio, retirada, conclusão e cancelamento;
-- código de rastreamento;
-- retirada separada do fluxo de entrega;
-- página pública “Meu Pedido” conectada diretamente à API;
-- rate limiting contra enumeração de pedidos.
-
-### Estoque
-
-- quantidades disponível, reservada, vendida e mínima;
-- movimentações auditáveis;
-- ajuste manual persistido pelo painel;
-- reserva transacional durante o checkout;
-- bloqueio pessimista para concorrência;
-- liberação automática de reservas expiradas;
-- baixa após confirmação do pagamento;
-- retorno ao estoque em cancelamentos e devoluções;
-- operação idempotente para evitar devolução duplicada;
-- teste concorrente para a última unidade.
-
-### Frete
-
-- integração preparada com o Melhor Envio;
-- OAuth por código de autorização;
-- renovação automática do token;
-- armazenamento protegido das credenciais;
-- ambientes de sandbox e produção separados;
-- cotação calculada no backend;
-- revalidação da cotação antes de criar o pedido;
-- peso, altura, largura e comprimento por produto;
-- aviso administrativo para produtos sem medidas;
-- retirada sem dependência de cotação.
-
-As credenciais não fazem parte do repositório. A integração exige uma nova conta e homologação antes de qualquer uso real.
-
-### Pagamentos
-
-- integração preparada com o checkout hospedado da InfinitePay;
-- criação de cobrança com valores calculados pelo servidor;
-- suporte estrutural para Pix e cartão;
-- retorno seguro do navegador;
-- webhook com confirmação ativa no provedor;
-- validação de pedido, transação e valor;
-- processamento idempotente de notificações repetidas;
-- integração desativada por padrão.
-
-Nenhuma credencial ou conta de pagamento está incluída. Cobranças e reembolsos reais exigem nova configuração e homologação.
-
-### Cancelamento, troca e devolução
-
-- abertura pública de solicitação;
-- protocolo e código seguro;
-- cancelamento, troca ou devolução;
-- motivo, detalhes, prazo e anexos;
-- acompanhamento pelo cliente;
-- painel administrativo de análise;
-- estados da solicitação e do estorno;
-- notas administrativas;
-- cancelamento do pedido e liberação de reserva;
-- retorno de itens ao estoque;
-- mensagens transacionais e auditoria.
-
-### Comunicações transacionais
-
-- fila persistente de saída;
-- publicação assíncrona de IDs pelo RabbitMQ;
-- exchange e filas duráveis;
-- consumidor desacoplado dos eventos de pedido;
-- processamento idempotente baseado no estado do outbox;
-- retry persistido sem perder mensagens quando o broker está indisponível;
-- dead-letter exchange e DLQ para falhas permanentes;
-- prefetch e concorrência configuráveis;
-- publisher confirms e retorno de mensagens;
-- fallback local quando RabbitMQ está desativado;
-- canais independentes de e-mail e WhatsApp;
-- eventos de criação, cobrança, pagamento, preparação, retirada, envio, rastreamento, conclusão, cancelamento e pós-venda;
-- mensagens com dados mínimos e links seguros;
-- tentativas automáticas com atraso progressivo;
-- reprocessamento administrativo;
-- mascaramento dos destinatários no painel;
-- estado “aguardando configuração” quando não há provedor.
-
-SMTP e WhatsApp estão desativados por padrão e não contêm destinatários, tokens ou remetentes reais.
-
-### Imagens
-
-- upload multipart para produtos e conteúdos;
-- validação de assinatura JPEG, PNG e WebP;
-- limite de tamanho;
-- nomes aleatórios;
-- proteção contra travessia de diretório;
-- escrita atômica;
-- armazenamento da URL no banco, sem novos Base64;
-- migração de imagens legadas;
-- cache público imutável;
-- diretório configurável e volume Docker.
-
-Para múltiplas réplicas, o armazenamento local deve ser substituído por S3, R2 ou serviço equivalente.
-
-### Painel administrativo
-
-- dashboard e avisos operacionais expansíveis;
-- CRUD de produtos e categorias;
-- estoque e medidas de frete;
-- pedidos, status e rastreamento;
-- conteúdo da Home, Sobre, FAQ e páginas institucionais;
-- destaques;
-- pós-venda;
-- comunicações pendentes;
-- auditoria;
-- configurações de integrações;
-- central de segurança.
-
-### Segurança
-
-- autenticação administrativa;
-- senha com BCrypt;
-- JWT em cookie `HttpOnly`;
-- `Secure` configurável e `SameSite=Strict`;
-- CSRF;
-- CORS restrito;
-- Content Security Policy e outros headers;
-- 2FA TOTP;
-- segredo TOTP criptografado;
-- sessões identificáveis e revogáveis;
-- encerramento das demais sessões;
-- rate limiting de login e APIs sensíveis;
-- DTOs limitados e rejeição de campos desconhecidos;
-- erros públicos sem stack trace ou detalhes internos;
-- identificador de correlação;
-- segredos exclusivamente por variáveis de ambiente.
-
-### Privacidade e acessibilidade
-
-- banner amigável de cookies;
-- aceitar todos, somente necessários ou personalizar;
-- categorias de preferências, analytics e marketing;
-- consentimento revogável;
-- eventos de funil condicionados ao consentimento;
-- páginas de privacidade, cookies, termos e trocas;
-- formulários com nomes acessíveis, mensagens associadas e estados anunciados;
-- navegação responsiva.
-
-Os textos institucionais presentes são demonstrações técnicas e precisam de revisão jurídica antes de reutilização comercial.
-
-### SEO e operação
-
-- metadados por rota;
-- canonical;
-- Open Graph;
-- JSON-LD;
-- sitemap, robots e feed de produtos;
-- endpoints Actuator;
-- métricas Prometheus;
-- correlação de logs;
-- health checks;
-- scripts de backup e restauração;
-- imagens Docker para frontend e backend.
-
-## Tecnologias
-
-### Frontend
-
-- React 19;
-- TypeScript;
-- TanStack Start e TanStack Router;
-- TanStack Query;
-- Vite;
-- Tailwind CSS;
-- Radix UI e componentes shadcn;
-- React Hook Form e Zod;
-- Playwright;
-- ESLint.
-
-### Backend
-
-- Java 21;
-- Spring Boot;
-- Spring MVC;
-- Spring Data JPA;
-- Spring Security;
-- PostgreSQL;
-- Flyway;
-- Maven;
-- JUnit, MockMvc e H2 para testes;
-- Docker Compose.
-- RabbitMQ.
-
-## Arquitetura resumida
-
-```text
-Navegador
-   │
-   ├── Frontend React / TanStack Start
-   │       ├── loja pública
-   │       └── painel administrativo
-   │
-   └── API Spring Boot
-           ├── autenticação e segurança
-           ├── catálogo, estoque e pedidos
-           ├── pagamento e frete
-           ├── pós-venda e comunicações
-           ├── PostgreSQL + Flyway (outbox)
-           └── RabbitMQ
-                   ├── angell.notifications.dispatch
-                   └── angell.notifications.dead (DLQ)
+```mermaid
+flowchart LR
+    U[Usuário] --> F[React + TanStack Start]
+    F --> A[API Spring Boot]
+    A --> P[(PostgreSQL)]
+    A --> X[Frete e pagamento]
+    A --> O[Outbox]
+    O --> R[RabbitMQ]
+    R --> N[E-mail ou WhatsApp]
+    R --> D[DLQ]
 ```
 
-## Como executar localmente
+- O frontend renderiza as rotas e consulta dados atuais da API.
+- Controllers, serviços e repositórios separam HTTP, regras de negócio e persistência.
+- PostgreSQL é a fonte de verdade; Flyway versiona o schema.
+- Checkout e estoque usam transações, bloqueio, reserva e idempotência.
+- O outbox persiste notificações; RabbitMQ desacopla o envio aos provedores.
+- Spring Security protege o painel com cookie `HttpOnly`, CSRF, TOTP e sessões revogáveis.
+
+## Estrutura de Pastas
+
+```text
+angel/
+├── backend/
+│   ├── src/main/java/com/angel/backend/
+│   │   ├── config/       # segurança, integrações e mensageria
+│   │   ├── controller/   # endpoints REST
+│   │   ├── dto/          # contratos da API
+│   │   ├── model/        # entidades JPA
+│   │   ├── repository/   # persistência
+│   │   └── service/      # regras de negócio
+│   ├── src/main/resources/db/migration/ # Flyway
+│   ├── src/test/         # testes de integração
+│   └── Dockerfile
+├── frontend/
+│   ├── e2e/              # Playwright
+│   ├── src/components/   # componentes reutilizáveis
+│   ├── src/lib/          # API, estado e utilitários
+│   ├── src/routes/       # rotas TanStack
+│   └── Dockerfile
+├── ops/                  # backup e alertas
+└── README.md
+```
+
+## Como Executar
 
 ### Pré-requisitos
 
-- Java 21;
-- Node.js e npm;
-- Docker e Docker Compose;
-- portas `5173`, `8081`, `5435`, `5672` e `15672` disponíveis.
+- Java 21, Node.js 22 e npm;
+- Docker com Compose;
+- portas `5173`, `8081`, `5435`, `5672` e `15672`.
 
-### 1. Variáveis de ambiente
-
-Use os arquivos de exemplo:
-
-- [`backend/.env.example`](./backend/.env.example)
-- [`frontend/.env.example`](./frontend/.env.example)
-
-Crie valores exclusivamente locais. Não reutilize credenciais pessoais e não versione arquivos `.env`.
-
-Variáveis mínimas do backend:
-
-```env
-JWT_SECRET=gere-um-segredo-aleatorio-com-pelo-menos-32-caracteres
-ADMIN_INITIAL_EMAIL=admin@example.invalid
-ADMIN_INITIAL_PASSWORD=defina-uma-senha-local-forte
-ADMIN_INITIAL_NAME=Administrador
-CORS_ALLOWED_ORIGINS=http://localhost:5173
-RABBITMQ_ENABLED=true
-RABBITMQ_HOST=localhost
-RABBITMQ_PORT=5672
-RABBITMQ_USERNAME=portfolio
-RABBITMQ_PASSWORD=portfolio-local
-```
-
-Frontend:
-
-```env
-VITE_API_URL=http://localhost:8081/api
-```
-
-### 2. PostgreSQL e RabbitMQ
+### Instalação
 
 ```bash
-cd backend
-docker compose up -d
+git clone git@github.com:walkermooore/angel.git
+cd angel
+
+cd frontend && npm install
+cd ../backend && ./mvnw dependency:go-offline
+cd ..
 ```
 
-O Compose inicia:
-
-- PostgreSQL em `localhost:5435`;
-- RabbitMQ/AMQP em `localhost:5672`;
-- painel de gerenciamento RabbitMQ em `http://localhost:15672`.
-
-As credenciais `portfolio` / `portfolio-local` existem somente para desenvolvimento local. Defina usuários e senhas próprios fora do repositório em qualquer ambiente compartilhado.
-
-### Como funciona a mensageria
-
-1. O evento de pedido grava uma comunicação na tabela `notification_outbox`.
-2. O agendador seleciona registros pendentes e publica somente o UUID na exchange `angell.notifications`.
-3. A fila durável `angell.notifications.dispatch` entrega o UUID ao consumidor.
-4. O consumidor consulta a mensagem no PostgreSQL e envia pelo canal configurado.
-5. Sucesso muda o registro para `SENT`.
-6. Falha temporária muda para `RETRY`, com nova tentativa progressiva.
-7. Depois do limite de tentativas, o registro fica `FAILED` e um resumo técnico vai para `angell.notifications.dead`.
-
-O conteúdo sensível não precisa trafegar pelo broker: destinatário, mensagem e link seguro permanecem no banco. Se o RabbitMQ estiver desligado, o mesmo outbox é processado diretamente pelo agendador.
-
-### 3. Backend
+### Configuração
 
 ```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+Troque o segredo JWT e as credenciais iniciais. Nunca versione `.env`, tokens ou dumps.
+
+### Variáveis de ambiente (`.env`)
+
+| Variável | Uso |
+| --- | --- |
+| `JWT_SECRET` | segredo forte para autenticação |
+| `ADMIN_INITIAL_EMAIL` / `ADMIN_INITIAL_PASSWORD` | primeiro administrador |
+| `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD` | PostgreSQL |
+| `CORS_ALLOWED_ORIGINS`, `SECURE_COOKIES` | origem e cookies |
+| `RABBITMQ_ENABLED`, `RABBITMQ_*` | broker e consumidores |
+| `MEDIA_DIRECTORY`, `MEDIA_PUBLIC_BASE_URL` | imagens |
+| `MELHOR_ENVIO_*` | OAuth e cotação |
+| `INFINITEPAY_*` | checkout e webhook |
+| `SMTP_*`, `WHATSAPP_*` | comunicações |
+| `VITE_API_URL`, `VITE_SITE_URL` | API e domínio do frontend |
+
+A relação completa e valores locais estão em `backend/.env.example` e `frontend/.env.example`. Integrações externas permanecem desativadas por padrão.
+
+### Executando localmente
+
+```bash
+# Infraestrutura
+docker compose -f backend/docker-compose.yml up -d
+
+# Terminal 1: API
 cd backend
-set -a
-source .env
-set +a
+set -a && source .env && set +a
 ./mvnw spring-boot:run
-```
 
-A API fica disponível em `http://localhost:8081`.
-
-### 4. Frontend
-
-```bash
+# Terminal 2: frontend
 cd frontend
-npm install
 npm run dev
 ```
 
-A interface fica disponível em `http://localhost:5173`.
+| Serviço | URL |
+| --- | --- |
+| Loja | <http://localhost:5173> |
+| API | <http://localhost:8081/api> |
+| Health | <http://localhost:8081/actuator/health> |
+| RabbitMQ | <http://localhost:15672> |
 
-## Testes e validação
-
-Backend:
+### Executando com Docker
 
 ```bash
-cd backend
-./mvnw test
+docker compose -f backend/docker-compose.yml up -d
+docker build -t angel-backend ./backend
+docker build \
+  --build-arg VITE_API_URL=http://localhost:8081/api \
+  --build-arg VITE_SITE_URL=http://localhost:3000 \
+  -t angel-frontend ./frontend
 ```
 
-Frontend:
+```bash
+docker run --rm --name angel-backend \
+  --add-host=host.docker.internal:host-gateway \
+  --env-file backend/.env \
+  -e DATABASE_URL=jdbc:postgresql://host.docker.internal:5435/angeldb \
+  -e RABBITMQ_HOST=host.docker.internal \
+  -p 8081:8081 -v angel_uploads:/app/data/uploads angel-backend
+
+docker run --rm --name angel-frontend -p 3000:3000 angel-frontend
+```
+
+### Executando testes
 
 ```bash
-cd frontend
-npx tsc --noEmit
+cd backend && ./mvnw test
+
+cd ../frontend
 npm run lint
+npx tsc --noEmit
 npm run build
+npx playwright install chromium
 npm run test:e2e
 ```
 
-O CI executa testes, lint, TypeScript, build, Playwright, verificação de segredos e construção das imagens.
+## Endpoints da API
 
-## Limitações conhecidas
+Mutações administrativas exigem autenticação e CSRF.
 
-- integrações externas não estão configuradas;
-- não existe ambiente de produção ativo;
-- dados empresariais e contatos foram removidos;
-- textos jurídicos são apenas uma base demonstrativa;
-- estorno financeiro depende da API e da conta do provedor;
-- storage externo/CDN não foi concluído;
-- observabilidade e backups precisam ser implantados em infraestrutura;
-- variantes de produto ainda não foram implementadas;
-- o projeto não recebe manutenção comercial.
+| Método | Endpoint | Descrição |
+| --- | --- | --- |
+| `GET` | `/api/produtos` | lista produtos |
+| `GET` | `/api/produtos/{id}` | detalha um produto |
+| `POST/PUT/DELETE` | `/api/produtos` | administra produtos |
+| `GET/POST/DELETE` | `/api/categorias` | administra categorias |
+| `POST` | `/api/pedidos` | cria pedido idempotente |
+| `POST` | `/api/pedidos/acompanhar` | acompanhamento seguro |
+| `GET/PATCH` | `/api/pedidos/{idOuNumero}` | consulta ou atualiza pedido |
+| `POST` | `/api/frete/cotacoes` | calcula frete |
+| `GET` | `/api/frete/oauth/authorization-url` | inicia OAuth |
+| `POST` | `/api/pagamentos/infinitepay/checkout` | cria cobrança |
+| `POST` | `/api/pagamentos/infinitepay/webhook` | confirma pagamento |
+| `POST` | `/api/auth/login` | inicia sessão administrativa |
+| `GET` | `/api/auth/me` | consulta a sessão |
+| `POST` | `/api/auth/2fa/setup` | configura TOTP |
+| `GET/DELETE` | `/api/auth/sessions/{id}` | consulta ou revoga sessão |
+| `POST/GET/PATCH` | `/api/pos-venda` | solicita e administra pós-venda |
+| `POST/GET` | `/api/media/images` | envia ou lê imagem |
+| `GET` | `/api/comunicacoes` | lista notificações |
+| `GET/POST` | `/api/auditoria` | acessa auditoria |
+| `GET/PUT` | `/api/home-settings` | gerencia a Home |
+| `GET/PUT` | `/api/paginas-institucionais` | gerencia páginas |
 
-## Uso como portfólio
+## Exemplos de Requisição
 
-Este repositório demonstra decisões de arquitetura, segurança, consistência transacional, tratamento de falhas, experiência administrativa e integração entre frontend e backend.
+### Produto
 
-O código pode ser estudado e adaptado respeitando a licença e os direitos aplicáveis aos seus componentes. A identidade, os dados e o relacionamento comercial do cliente original não fazem parte deste portfólio.
+```json
+{
+  "name": "Produto demonstrativo",
+  "description": "Descrição do produto",
+  "price": 149.90,
+  "category": "Categoria",
+  "imageUrl": "http://localhost:8081/api/media/images/arquivo.webp",
+  "highlighted": false,
+  "stockQuantity": 10,
+  "minimumStock": 2,
+  "weight": 0.3,
+  "height": 4,
+  "width": 12,
+  "length": 16
+}
+```
 
-## Documentação complementar
+### Pedido
 
-- [`AUDITORIA_ECOMMERCE.md`](./AUDITORIA_ECOMMERCE.md)
-- [`DOCUMENTACAO_PROJETO.md`](./DOCUMENTACAO_PROJETO.md)
-- [`MELHOR_ENVIO_CONFIGURACAO.md`](./MELHOR_ENVIO_CONFIGURACAO.md)
-- [`INFINITEPAY_CONFIGURACAO.md`](./INFINITEPAY_CONFIGURACAO.md)
+```http
+POST /api/pedidos
+Content-Type: application/json
+Idempotency-Key: 4ce624df-1d82-4b87-b1ab-6eef46ff3f3f
+```
+
+```json
+{
+  "customerName": "Cliente de teste",
+  "email": "cliente@example.com",
+  "phone": "65000000000",
+  "items": [{
+    "productId": "00000000-0000-0000-0000-000000000000",
+    "quantity": 1
+  }],
+  "shippingOption": "retirada",
+  "shippingQuoteId": "PICKUP",
+  "payment": "PIX",
+  "address": null
+}
+```
+
+Preços, descontos, estoque, frete e total são recalculados no servidor.
+
+## Fluxo da Aplicação
+
+1. O frontend busca catálogo e conteúdo na API.
+2. O cliente monta a sacola e escolhe entrega ou retirada.
+3. A API valida valores, bloqueia o estoque, reserva unidades e cria o pedido.
+4. Quando habilitada, a InfinitePay cria a cobrança e confirma por webhook.
+5. A confirmação baixa o estoque e grava mensagens no outbox.
+6. RabbitMQ entrega o trabalho ao consumidor; falhas usam retry e DLQ.
+7. O cliente acompanha o pedido por token e pode solicitar pós-venda.
+
+## Funcionalidades
+
+- catálogo, busca, categorias, destaques, página do produto e SEO;
+- estoque visível, ocultação de indisponíveis e skeletons neutros;
+- sacola persistente e checkout com frete, retirada e revisão;
+- pedidos idempotentes, acompanhamento, rastreio e status;
+- reserva, expiração, baixa, ajuste e devolução de estoque;
+- cancelamento, troca, devolução, anexos e reembolso;
+- CRUD administrativo de catálogo, conteúdo, FAQ e pedidos;
+- upload validado de JPEG, PNG e WebP;
+- Melhor Envio OAuth e InfinitePay preparados, mas não homologados;
+- notificações por outbox, RabbitMQ, e-mail e WhatsApp;
+- login, BCrypt, cookie `HttpOnly`, CSRF, 2FA e revogação;
+- cookies configuráveis, auditoria, métricas e backups.
+
+## Roadmap
+
+- [ ] homologar Melhor Envio e InfinitePay;
+- [ ] configurar provedores reais de e-mail e WhatsApp;
+- [ ] migrar imagens para S3, R2 ou equivalente;
+- [ ] revisar textos e processos com assessoria jurídica;
+- [ ] adicionar OpenAPI, JaCoCo, testes de contrato e Testcontainers;
+- [ ] recriar CI/CD quando existir infraestrutura mantida;
+- [ ] definir hospedagem, domínio, SLOs, smoke test e rollback.
+
+## Testes
+
+O backend possui **21 testes** de autenticação, segurança, pedidos, estoque, idempotência, rate limiting e RabbitMQ. O Playwright cobre checkout e conteúdo inicial em desktop e viewport móvel. H2 isola os testes do banco de desenvolvimento.
+
+## Qualidade de Código
+
+- ESLint, TypeScript, Maven, JUnit, MockMvc e Playwright;
+- Flyway para evolução reproduzível do banco;
+- DTOs estritos contra campos não permitidos;
+- CI/CD removido após o encerramento comercial;
+- SonarQube, Checkstyle, SpotBugs e JaCoCo não configurados.
+
+## Deploy
+
+As imagens Docker podem ser enviadas a qualquer registry. Uma publicação real deve provisionar PostgreSQL, RabbitMQ, mídia persistente, HTTPS e secrets; executar Flyway; validar health e métricas; e manter rollback.
+
+```bash
+# Substitua REGISTRY e TAG
+docker tag angel-backend REGISTRY/angel-backend:TAG
+docker tag angel-frontend REGISTRY/angel-frontend:TAG
+docker push REGISTRY/angel-backend:TAG
+docker push REGISTRY/angel-frontend:TAG
+```
+
+<!-- Preencher quando definidos: domínio, provedor, registry e rollback. -->
+
+## Contribuição
+
+1. Faça um fork e crie uma branch: `git switch -c feat/minha-melhoria`.
+2. Implemente e execute lint, build e testes.
+3. Use commits semânticos em português.
+4. Abra um pull request com contexto e validação.
+
+Não envie credenciais, `.env`, dados pessoais ou dumps.
+
+## Licença
+
+Ainda não há licença de código aberto. Sem um arquivo `LICENSE`, permanecem reservados os direitos previstos em lei.
+
+<!-- Defina uma licença antes de permitir redistribuição. -->
+
+## Autor
+
+Mantido por **Portfolio Developer** como projeto de portfólio.
+
+<!-- Preencha nome profissional, perfil público e contato que desejar divulgar. -->
