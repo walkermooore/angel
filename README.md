@@ -339,6 +339,4 @@ Ainda não há licença de código aberto. Sem um arquivo `LICENSE`, permanecem 
 
 ## Autor
 
-Mantido por **Portfolio Developer** como projeto de portfólio.
-
-<!-- Preencha nome profissional, perfil público e contato que desejar divulgar. -->
+Mantido por **Léo Walker** como projeto de portfólio.
