@@ -273,7 +273,7 @@ export const ordersApi = {
         current.number,
         "Alteração de Status",
         `Status alterado de '${current.status}' para '${status}'`,
-        "admin@example.invalid"
+        "Administrador"
       );
     }
   },
@@ -307,7 +307,7 @@ export const ordersApi = {
         logMsg += `Rastreio registrado: ${patch.trackingCode}. `;
       }
       if (logMsg) {
-        auditApi.log(current.number, "Edição do Pedido", logMsg.trim(), "admin@example.invalid");
+        auditApi.log(current.number, "Edição do Pedido", logMsg.trim(), "Administrador");
       }
     }
   },

@@ -5,7 +5,7 @@ import { formatBRL } from "@/lib/cart";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, CheckCircle2, Circle, Package, MapPin, Phone, MessageCircle, AlertCircle, Truck, ExternalLink, Store } from "lucide-react";
+import { Search, CheckCircle2, Circle, Package, MapPin, AlertCircle, Truck, ExternalLink, Store } from "lucide-react";
 import { toast } from "sonner";
 import { trackOrderFromBackend } from "@/lib/api";
 import { mapOrderFromBackend } from "@/lib/store";
@@ -195,20 +195,13 @@ function MeuPedidoPage() {
                     <p className="font-semibold text-lg text-foreground">
                       {foundOrder.status === "Pronto para Retirada"
                         ? "Seu pedido já está PRONTO PARA RETIRADA na loja!"
-                        : "[endereço de retirada removido]"}
+                        : "O endereço de retirada deve ser configurado pela operação."}
                     </p>
                   </div>
-                  <Button
-                    asChild
-                    className="rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold text-xs uppercase tracking-wider px-6 h-11 shrink-0 gap-2"
-                  >
-                    <a
-                      href={`}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <MessageCircle className="h-4 w-4" /> Conversar no WhatsApp
-                    </a>
+                  <Button asChild variant="outline" className="rounded-full">
+                    <Link to="/pos-venda" search={{ n: foundOrder.number, t: foundOrder.publicTrackingToken || "", p: "" }}>
+                      Abrir solicitação
+                    </Link>
                   </Button>
                 </div>
               ) : null}
@@ -316,9 +309,6 @@ function MeuPedidoPage() {
                       {foundOrder.address.neighborhood} — {foundOrder.address.city}/{foundOrder.address.state}
                     </p>
                     <p className="text-muted-foreground font-mono text-xs">CEP: {foundOrder.address.cep}</p>
-                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5 pt-2 border-t border-border/60">
-                      <Phone className="h-3.5 w-3.5" /> Contato da Loja: [contato removido]
-                    </p>
                   </CardContent>
                 </Card>
 
@@ -351,24 +341,20 @@ function MeuPedidoPage() {
                 </Card>
               </div>}
 
-              {/* Botão de Suporte via WhatsApp */}
+              {/* Acesso ao fluxo de pós-venda */}
               {(!isRetirada || foundOrder.status === "Concluído") && (
                 <div className="p-6 border border-emerald-500/20 rounded-xl bg-emerald-500/10 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div>
                     <h3 className="font-semibold text-foreground text-base">Dúvidas sobre o rastreamento?</h3>
-                    <p className="text-xs text-muted-foreground mt-1">Fale diretamente com nossa equipe de suporte no WhatsApp.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Use o protocolo seguro de pós-venda para solicitar atendimento.</p>
                   </div>
                   <Button
                     asChild
-                    className="rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold text-xs uppercase tracking-wider px-6 h-11 shrink-0 gap-2"
+                    className="rounded-full font-semibold text-xs uppercase tracking-wider px-6 h-11 shrink-0 gap-2"
                   >
-                    <a
-                      href={`}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <MessageCircle className="h-4 w-4" /> WhatsApp ([contato removido])
-                    </a>
+                    <Link to="/pos-venda" search={{ n: foundOrder.number, t: foundOrder.publicTrackingToken || "", p: "" }}>
+                      Abrir solicitação
+                    </Link>
                   </Button>
                 </div>
               )}
@@ -383,17 +369,8 @@ function MeuPedidoPage() {
                   Verifique o código digitado ou fale conosco no atendimento.
                 </p>
               </div>
-              <Button
-                asChild
-                className="rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold text-xs uppercase tracking-wider px-6 h-11 gap-2"
-              >
-                <a
-                  href={`}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <MessageCircle className="h-4 w-4" /> Suporte WhatsApp ([contato removido])
-                </a>
+              <Button asChild variant="outline" className="rounded-full">
+                <Link to="/faq">Consultar perguntas frequentes</Link>
               </Button>
             </div>
           )}

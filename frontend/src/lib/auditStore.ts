@@ -56,7 +56,7 @@ export function useAuditLogs(): AuditLog[] {
 }
 
 export const auditApi = {
-  log: (orderNumber: string, action: string, details: string, user = "admin@example.invalid") => {
+  log: (orderNumber: string, action: string, details: string, user = "Administrador") => {
     const newLog: AuditLog = {
       id: crypto.randomUUID(),
       timestamp: new Date().toISOString(),

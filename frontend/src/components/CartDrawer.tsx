@@ -258,7 +258,7 @@ export function CartDrawer() {
                     <Store className="h-4 w-4" /> Retirada Grátis em Cuiabá/MT
                   </p>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Retire seu pedido na loja física sem custos de frete. [endereço de retirada removido].
+                    Retire seu pedido no endereço configurado pela operação, sem custos de frete.
                   </p>
                 </div>
               )}

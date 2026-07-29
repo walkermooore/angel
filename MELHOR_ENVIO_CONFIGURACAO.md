@@ -24,7 +24,7 @@ O painel **Avisos** lista os produtos incompletos. A cotação é bloqueada enqu
    MELHOR_ENVIO_CLIENT_ID=ID_DO_APLICATIVO_SANDBOX
    MELHOR_ENVIO_CLIENT_SECRET=SEGREDO_DO_APLICATIVO_SANDBOX
    MELHOR_ENVIO_REDIRECT_URI=http://localhost:8081/api/frete/oauth/callback
-   MELHOR_ENVIO_USER_AGENT=Angell Joias (email-real-de-suporte@dominio.com)
+   MELHOR_ENVIO_USER_AGENT=Portfolio Ecommerce (configure-um-contato)
    MELHOR_ENVIO_ORIGIN_CEP=CEP_REAL_DE_POSTAGEM
    JWT_SECRET=SEGREDO_FIXO_COM_PELO_MENOS_32_CARACTERES
    ```
@@ -64,7 +64,7 @@ Sandbox e produção são ambientes independentes. Para produção:
    MELHOR_ENVIO_CLIENT_ID=ID_DO_APLICATIVO_DE_PRODUCAO
    MELHOR_ENVIO_CLIENT_SECRET=SEGREDO_DO_APLICATIVO_DE_PRODUCAO
    MELHOR_ENVIO_REDIRECT_URI=https://api.seudominio.com/api/frete/oauth/callback
-   MELHOR_ENVIO_USER_AGENT=Angell Joias (email-real-de-suporte@dominio.com)
+   MELHOR_ENVIO_USER_AGENT=Portfolio Ecommerce (configure-um-contato)
    MELHOR_ENVIO_ORIGIN_CEP=CEP_REAL_DE_POSTAGEM
    ```
 

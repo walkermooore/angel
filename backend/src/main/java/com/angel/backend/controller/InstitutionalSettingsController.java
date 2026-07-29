@@ -66,7 +66,7 @@ public class InstitutionalSettingsController {
             O produto deve ser devolvido em sua embalagem original, acompanhado da nota fiscal/certificado de garantia da prata 925, sem indícios de uso ou avaria.
 
             4. Como Solicitar
-            Envie uma mensagem via WhatsApp para nosso atendimento pelo número [contato removido] informando o número do seu pedido e o motivo da troca.
+            Utilize a área de pós-venda para abrir uma solicitação com o número do pedido, o motivo e os anexos necessários.
             """.trim());
         settings.setPrivacyContent("""
             A Angell compromete-se com a segurança e a privacidade dos dados de nossos clientes durante todo o processo de navegação e compra pelo site.

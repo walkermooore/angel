@@ -37,8 +37,8 @@ type Settings = {
 
 const defaults: Settings = {
   storeName: "Angell",
-  supportEmail: "contato@example.invalid",
-  supportWhatsapp: "(00) 00000-0000",
+  supportEmail: "",
+  supportWhatsapp: "",
 };
 
 function AdminConfiguracoes() {

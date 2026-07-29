@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { Instagram, Facebook, Mail, Phone } from "lucide-react";
 
 export function Footer() {
   return (
@@ -12,14 +11,6 @@ export function Footer() {
             <p className="text-xs text-muted-foreground mt-3 tracking-wide max-w-xs leading-relaxed">
               Joias em prata 925 e cosméticos selecionados. Sofisticação minimalista para o seu dia a dia.
             </p>
-            <div className="flex gap-3 mt-5">
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
-                <Instagram className="h-4 w-4" />
-              </a>
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
-                <Facebook className="h-4 w-4" />
-              </a>
-            </div>
           </div>
 
           {/* Column 2: Ajuda */}
@@ -36,18 +27,13 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Column 3: Contato */}
+          {/* Column 3: Estado do projeto */}
           <div className="flex flex-col items-center md:items-end">
             <div className="text-center md:text-left">
-              <h4 className="text-xs uppercase tracking-widest font-semibold mb-4 text-foreground">Atendimento</h4>
-              <ul className="space-y-2.5 text-sm text-muted-foreground">
-                <li className="flex items-center justify-center md:justify-start gap-2">
-                  <Mail className="h-4 w-4 text-foreground/70" /> contato@example.invalid
-                </li>
-                <li className="flex items-center justify-center md:justify-start gap-2">
-                  <Phone className="h-4 w-4 text-foreground/70" /> [contato removido]
-                </li>
-              </ul>
+              <h4 className="text-xs uppercase tracking-widest font-semibold mb-4 text-foreground">Demonstração</h4>
+              <p className="max-w-xs text-sm text-muted-foreground">
+                Projeto descontinuado comercialmente e preservado como portfólio. Não há atendimento ou vendas ativas.
+              </p>
             </div>
           </div>
         </div>
@@ -55,8 +41,8 @@ export function Footer() {
 
       <div className="border-t border-border/60 bg-background/50">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 py-6 text-xs text-muted-foreground flex flex-col sm:flex-row justify-between items-center gap-3">
-          <span>© {new Date().getFullYear()} Angell. Todos os direitos reservados.</span>
-          <span>Dados comerciais removidos</span>
+          <span>© {new Date().getFullYear()} Projeto demonstrativo.</span>
+          <span>Dados comerciais removidos.</span>
         </div>
       </div>
     </footer>

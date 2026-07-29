@@ -189,4 +189,4 @@ O projeto funciona inteiramente no lado do cliente (Client-Side), simulando oper
     *   Fornece funções utilitárias de manipulação (`add`, `remove`, `updateQty`, `clear`).
 *   **Autenticação do Admin** ([src/lib/admin-auth.ts](frontend/src/lib/admin-auth.ts)):
     *   Gerencia o estado de login do usuário administrador no navegador por meio de chaves de autenticação salvas no `sessionStorage`.
-    *   Fornece credenciais padrão estáticas de demonstração (`admin@example.invalid` / `admin123`).
+    *   Fornece credenciais padrão estáticas de demonstração (credenciais locais configuradas por ambiente).

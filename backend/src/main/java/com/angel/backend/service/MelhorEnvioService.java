@@ -43,7 +43,7 @@ public class MelhorEnvioService {
         MelhorEnvioOAuthService oauthService,
         MeterRegistry meterRegistry,
         @Value("${app.melhor-envio.base-url:https://melhorenvio.com.br}") String baseUrl,
-        @Value("${app.melhor-envio.user-agent:Angell Joias (contato@example.invalid)}") String userAgent,
+        @Value("${app.melhor-envio.user-agent:Portfolio Ecommerce (configure-um-contato)}") String userAgent,
         @Value("${app.melhor-envio.origin-cep:78000000}") String originCep
     ) {
         this.productRepository = productRepository;

@@ -336,7 +336,7 @@ function CheckoutPage() {
                   <Store className="h-4 w-4" /> Retirada Sem Custos de Frete
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Seu pedido estará disponível para retirada na loja física: <strong>[endereço de retirada removido]</strong>.
+                  Seu pedido estará disponível no endereço de retirada configurado pela operação.
                 </p>
               </div>
             )}
