@@ -1,9 +1,11 @@
 package com.angel.backend.service;
 
+import com.angel.backend.messaging.NotificationQueuePublisher;
 import com.angel.backend.model.NotificationOutbox;
 import com.angel.backend.model.PurchaseOrder;
 import com.angel.backend.repository.NotificationOutboxRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,6 +16,8 @@ import org.springframework.web.client.RestClient;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class TransactionalNotificationService {
@@ -26,6 +30,7 @@ public class TransactionalNotificationService {
     private final String whatsappUrl;
     private final String whatsappToken;
     private final String publicUrl;
+    private final NotificationQueuePublisher queuePublisher;
 
     public TransactionalNotificationService(
         NotificationOutboxRepository repository,
@@ -35,7 +40,8 @@ public class TransactionalNotificationService {
         @Value("${app.notifications.email-from:}") String emailFrom,
         @Value("${app.notifications.whatsapp-webhook-url:}") String whatsappUrl,
         @Value("${app.notifications.whatsapp-token:}") String whatsappToken,
-        @Value("${app.notifications.public-url:http://localhost:5173}") String publicUrl
+        @Value("${app.notifications.public-url:http://localhost:5173}") String publicUrl,
+        ObjectProvider<NotificationQueuePublisher> queuePublisher
     ) {
         this.repository = repository;
         this.mailSender = mailSender;
@@ -45,6 +51,7 @@ public class TransactionalNotificationService {
         this.whatsappUrl = whatsappUrl;
         this.whatsappToken = whatsappToken;
         this.publicUrl = publicUrl.replaceAll("/+$", "");
+        this.queuePublisher = queuePublisher.getIfAvailable();
         this.restClient = RestClient.create();
     }
 
@@ -91,7 +98,23 @@ public class TransactionalNotificationService {
         List<NotificationOutbox> pending = repository
             .findTop50ByStatusInAndNextAttemptAtBeforeOrderByCreatedAtAsc(
                 List.of("PENDING", "RETRY"), LocalDateTime.now().plusSeconds(1));
-        pending.forEach(this::dispatch);
+        pending.forEach(item -> {
+            if (queuePublisher == null) {
+                dispatch(item);
+            } else {
+                publish(item);
+            }
+        });
+    }
+
+    @Transactional
+    public void dispatchQueued(UUID notificationId) {
+        NotificationOutbox item = repository.findById(notificationId).orElse(null);
+        if (item == null || !Set.of("QUEUED", "PENDING", "RETRY").contains(item.getStatus())) return;
+        dispatch(item);
+        if ("FAILED".equals(item.getStatus()) && queuePublisher != null) {
+            queuePublisher.sendToDeadLetter(item.getId(), item.getLastError());
+        }
     }
 
     @Transactional
@@ -117,6 +140,20 @@ public class TransactionalNotificationService {
             item.setLastError(safeError(exception));
         }
         repository.save(item);
+    }
+
+    private void publish(NotificationOutbox item) {
+        item.setStatus("QUEUED");
+        item.setLastError(null);
+        repository.save(item);
+        try {
+            queuePublisher.publish(item.getId());
+        } catch (Exception exception) {
+            item.setStatus("PENDING");
+            item.setNextAttemptAt(LocalDateTime.now().plusSeconds(30));
+            item.setLastError("RabbitMQ indisponível: " + safeError(exception));
+            repository.save(item);
+        }
     }
 
     private void sendEmail(NotificationOutbox item) {
