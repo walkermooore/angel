@@ -4,10 +4,10 @@ import { getAuditLogsFromBackend, createAuditLogBackend } from "./api";
 export interface AuditLog {
   id: string;
   timestamp: string;
-  orderNumber: string;
-  action: string;
-  user: string;
-  details: string;
+  orderNumber: string | null;
+  action: string | null;
+  user: string | null;
+  details: string | null;
 }
 
 const AUDIT_KEY = "angel:audit_logs";

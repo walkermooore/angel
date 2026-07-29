@@ -15,12 +15,11 @@ function AdminAuditoria() {
   const [filter, setFilter] = useState("");
 
   const filteredLogs = logs.filter((log) => {
-    const q = filter.toLowerCase();
-    return (
-      log.orderNumber.toLowerCase().includes(q) ||
-      log.action.toLowerCase().includes(q) ||
-      log.user.toLowerCase().includes(q) ||
-      log.details.toLowerCase().includes(q)
+    const q = filter.trim().toLocaleLowerCase("pt-BR");
+    if (!q) return true;
+
+    return [log.orderNumber, log.action, log.user, log.details].some((value) =>
+      String(value ?? "").toLocaleLowerCase("pt-BR").includes(q)
     );
   });
 
@@ -79,18 +78,18 @@ function AdminAuditoria() {
                     })}
                   </TableCell>
                   <TableCell className="font-mono text-xs font-bold text-foreground">
-                    {log.orderNumber}
+                    {log.orderNumber || "—"}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="text-xs font-semibold">
-                      {log.action}
+                      {log.action || "Evento registrado"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-xs font-medium text-muted-foreground">
-                    {log.user}
+                    {log.user || "Sistema"}
                   </TableCell>
                   <TableCell className="text-xs text-foreground max-w-md leading-relaxed">
-                    {log.details}
+                    {log.details || "Sem detalhes adicionais."}
                   </TableCell>
                 </TableRow>
               ))
