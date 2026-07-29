@@ -341,9 +341,9 @@ Faltam frontend unitário, axe, contrato, PostgreSQL/Testcontainers, testes auto
 
 ## 24. CI/CD
 
-**Estado: ✅ CI; 🟡 deploy**
+**Estado: ❌ automação removida**
 
-`.github/workflows/ci.yml` executa testes, lint, TypeScript, build, Playwright em Chromium, auditoria de produção, detecção de segredos e construção das imagens. O backend passou a usar Maven oficial no job e na imagem Docker, eliminando a dependência incorreta de um `mvnw` inexistente no contexto da imagem. Faltam provedor, ambientes, deploy aprovado, migrações, smoke e rollback ensaiado.
+O workflow que executava CI e publicava imagens foi removido porque o projeto comercial foi encerrado e essa automação não será mantida. Testes, lint e builds continuam disponíveis para execução local, mas não há pipeline ativo no GitHub Actions. Para retomar uma entrega automatizada, será necessário recriar a validação contínua e definir provedor, ambientes, deploy aprovado, migrações, smoke e rollback.
 
 ## 25. Observabilidade
 
@@ -418,7 +418,6 @@ Há eventos consentidos para produto, sacola, checkout, entrega, frete, pagament
 - `frontend/src/routes/checkout.tsx`
 - `frontend/src/lib/store.ts`
 - `frontend/src/routes/produtos_.$slug.tsx`
-- `.github/workflows/ci.yml`
 - `INFINITEPAY_CONFIGURACAO.md`
 - `ops/backup-postgres.sh`
 - `ops/prometheus-alerts.yml`
